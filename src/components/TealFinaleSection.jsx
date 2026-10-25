@@ -41,7 +41,7 @@ export default function TealFinaleSection({ onOpenDashboard }) {
         <p>See the queue your distributor will face tomorrow morning — and clear it today.</p>
         
         <a 
-          href={DASHBOARD_URL}
+          href="#/login"
           className="pill pill-solid"
         >
           <span className="pill-window">

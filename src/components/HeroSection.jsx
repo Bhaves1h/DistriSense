@@ -70,7 +70,7 @@ export default function HeroSection({ onOpenDashboard }) {
           it sees the stockout before the shelf does
         </p>
 
-        <a href={DASHBOARD_URL} className="cinematic-cta-btn">
+        <a href="#/login" className="cinematic-cta-btn">
           <span>Open the dashboard</span>
         </a>
       </div>

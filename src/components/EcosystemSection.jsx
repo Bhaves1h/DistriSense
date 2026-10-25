@@ -104,7 +104,7 @@ function EcosystemCardItem({ card, onOpenDashboardWithTab, registerCardRef }) {
           </div>
 
           <a
-            href={DASHBOARD_URL}
+            href="#/login"
             onClick={(e) => e.stopPropagation()}
             className="pill pill-outline-light"
             style={{ marginTop: '20px', width: '100%', justifyContent: 'center' }}

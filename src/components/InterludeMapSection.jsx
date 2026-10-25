@@ -49,7 +49,7 @@ export default function InterludeMapSection({ onOpenDashboardWithTab }) {
                   Current Cover: <strong>{selectedNode.cover || selectedNode.stock}</strong>
                 </div>
                 <a
-                  href={DASHBOARD_URL}
+                  href="#/login"
                   className="action-btn-sm action-btn-approve"
                   style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}
                 >

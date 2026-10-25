@@ -61,7 +61,7 @@ export default function Header({ currentView, onNavigate }) {
           Sign In
         </a>
         <a 
-          href={DASHBOARD_URL}
+          href="#/login"
           className="liquid-glass cinematic-nav-cta"
         >
           Open the dashboard
@@ -115,7 +115,7 @@ export default function Header({ currentView, onNavigate }) {
             Sign In / Register
           </a>
           <a 
-            href={DASHBOARD_URL}
+            href="#/login"
             className="pill pill-solid"
             style={{ width: '100%', marginTop: '4px', justifyContent: 'center' }}
           >

@@ -170,7 +170,7 @@ export default function FindingsDeckSection({ onOpenDashboardWithTab }) {
             </p>
 
             <a
-              href={DASHBOARD_URL}
+              href="#/login"
               className="pill pill-solid"
             >
               <span className="pill-window">
