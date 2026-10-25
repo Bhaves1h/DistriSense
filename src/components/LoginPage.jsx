@@ -65,6 +65,13 @@ export default function LoginPage() {
 
   // Selected company for dashboard greeting
   const [company, setCompany] = useState('');
+  const [existingCompany, setExistingCompany] = useState(() => {
+    try {
+      return localStorage.getItem('ds_company') || '';
+    } catch (_) {
+      return '';
+    }
+  });
 
   // FIX C: Starting a fresh registration (arriving at #/login) clears ds_onboarding from any previous session
   useEffect(() => {
@@ -153,6 +160,8 @@ export default function LoginPage() {
   };
 
   // FIX C: Navigate to the dashboard WITH ?company={the organisation from THIS registration} — never a bare dashboard URL.
+  // Using location.replace ensures the login/quiz screen is not left in the history stack,
+  // so clicking the browser's top-left back arrow returns to the website overview.
   const redirectToDashboard = (companyName) => {
     const raw = companyName || company || organisationName || googleOrgName || '';
     const trimmed = raw.trim() || 'Apex FMCG Distributors';
@@ -169,7 +178,7 @@ export default function LoginPage() {
     }
     const separator = baseUrl.includes('?') ? '&' : '?';
     const target = `${baseUrl}${separator}company=${encodeURIComponent(trimmed)}${hashPart}`;
-    window.location.href = target;
+    window.location.replace(target);
   };
 
   // Form submit -> Sets company, clears onboarding, advances to clean Quiz
@@ -361,6 +370,67 @@ export default function LoginPage() {
                 transition={{ duration: 0.25 }}
                 className="w-full"
               >
+                {/* Top Nav: Back to Website */}
+                <div className="flex items-center justify-between" style={{ marginBottom: '24px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.hash = '#overview';
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <ArrowLeft size={14} />
+                    <span>Back to Website</span>
+                  </button>
+
+                  {existingCompany && (
+                    <button
+                      type="button"
+                      onClick={() => redirectToDashboard(existingCompany)}
+                      className="text-xs text-[#8AAFA7] hover:text-white transition-colors cursor-pointer underline"
+                    >
+                      Resume {existingCompany} &rarr;
+                    </button>
+                  )}
+                </div>
+
+                {/* Active Session Card (if previously logged in) */}
+                {existingCompany && (
+                  <div className="rounded-xl border border-white/15 bg-white/5 p-4 text-left" style={{ marginBottom: '28px' }}>
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div>
+                        <p className="text-xs text-white/50">Signed in company</p>
+                        <p className="text-sm font-semibold text-white">{existingCompany}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => redirectToDashboard(existingCompany)}
+                          className="px-3.5 py-1.5 bg-[#20605C] hover:bg-[#173F3B] text-white text-xs font-semibold rounded-lg transition-all cursor-pointer shadow-sm"
+                        >
+                          Open Dashboard &rarr;
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            try {
+                              localStorage.removeItem('ds_company');
+                              localStorage.removeItem('ds_onboarding');
+                            } catch (_) {}
+                            setExistingCompany('');
+                            setCompany('');
+                            setOrganisationName('');
+                          }}
+                          className="px-2.5 py-1.5 text-xs text-white/50 hover:text-white underline transition-colors cursor-pointer"
+                          title="Sign in as another company"
+                        >
+                          Switch
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Header */}
                 <div className="text-left">
                   <h2 className="text-3xl font-medium tracking-tight text-white">

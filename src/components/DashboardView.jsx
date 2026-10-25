@@ -23,7 +23,8 @@ import {
   Sparkles,
   Layers,
   ShieldAlert,
-  ArrowRight
+  ArrowRight,
+  LogOut
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -175,9 +176,29 @@ export default function DashboardView({ initialTab = 'queue', onNavigateBack, sh
             <span>{currentTerritory.dispatchTime}</span>
           </div>
 
-          <button onClick={onNavigateBack} className="pill pill-outline" style={{ height: '38px', padding: '0 18px', fontSize: '13px' }}>
+          <button onClick={onNavigateBack} className="pill pill-outline" style={{ height: '38px', padding: '0 16px', fontSize: '13px' }}>
             <ArrowLeft size={14} />
             <span>Back to Overview</span>
+          </button>
+
+          <button 
+            type="button"
+            onClick={() => {
+              const confirmed = window.confirm(`Log out of "${companyName}" and sign in as another company?`);
+              if (!confirmed) return;
+              try {
+                localStorage.removeItem('ds_company');
+                localStorage.removeItem('ds_onboarding');
+              } catch (_) {}
+              window.location.hash = '#/login';
+              window.location.reload();
+            }} 
+            className="pill pill-outline" 
+            style={{ height: '38px', padding: '0 14px', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            title="Log out or sign in as another company"
+          >
+            <LogOut size={14} />
+            <span>Switch Company</span>
           </button>
         </div>
       </header>

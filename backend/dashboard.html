@@ -114,6 +114,22 @@
     color: #C2D6D0;
     margin-top: 2px;
   }
+  .btn-sidebar-icon {
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
+    border-radius: 6px;
+    color: #E9E8E1;
+    padding: 4px 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .btn-sidebar-icon:hover {
+    background: rgba(255, 255, 255, 0.22);
+    transform: scale(1.05);
+  }
 
   /* Sub-nav Top Action Bar */
   .snav {
@@ -508,8 +524,16 @@
 
 <aside class="sidebar">
   <div class="sidebar-brand">
-    <div class="sidebar-logo">DistriSense</div>
-    <div class="sidebar-tagline">Distribution Intelligence</div>
+    <a href="#" id="link-brand-home" title="Return to Overview Website" style="color:inherit; text-decoration:none; display:block;">
+      <div class="sidebar-logo" style="display:flex; align-items:center; gap:8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8AAFA7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        <span>DistriSense</span>
+      </div>
+      <div class="sidebar-tagline" style="margin-left:26px;">Distribution Intelligence</div>
+    </a>
   </div>
 
   <nav class="sidebar-nav">
@@ -521,8 +545,22 @@
   </nav>
 
   <div class="sidebar-footer">
-    <div class="company-name" id="sidebar-company">Apex FMCG Distributors</div>
-    <div class="territory-label">Kolhapur territory</div>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+      <div class="company-name" id="sidebar-company">Apex FMCG Distributors</div>
+      <button id="btn-sidebar-switch-company" type="button" class="btn-sidebar-icon" title="Log out or sign in as another company" aria-label="Log out or sign in as another company">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="territory-label" style="display:flex; align-items:center; justify-content:space-between; margin-top:3px;">
+      <span>Kolhapur territory</span>
+      <button id="btn-sidebar-switch-link" type="button" style="background:none; border:none; padding:0; color:#8AAFA7; font-size:11px; text-decoration:underline; cursor:pointer;" title="Log out or sign in as another company">
+        Switch
+      </button>
+    </div>
   </div>
 </aside>
 
@@ -531,6 +569,15 @@
   <div class="right">
     <button id="btn-daily-digest" class="btn-digest">09:00 WhatsApp Digest</button>
     <button id="btn-run-now" class="btn-primary btn-run">Run now</button>
+    <!-- Small symbol to log out or sign in as another company -->
+    <button id="btn-topbar-switch-company" type="button" class="btn-digest" title="Log out or sign in as another company" style="display:inline-flex; align-items:center; gap:6px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+        <polyline points="16 17 21 12 16 7"></polyline>
+        <line x1="21" y1="12" x2="9" y2="12"></line>
+      </svg>
+      <span>Switch Company</span>
+    </button>
   </div>
 </div>
 
@@ -2916,6 +2963,57 @@ function initOrientationStrip() {
   }
 }
 
+// --- Sign Out / Switch Company & Navigation Controls ---
+function initAuthControls() {
+  function logoutOrSwitch() {
+    let currentComp = 'your organisation';
+    try {
+      currentComp = localStorage.getItem('ds_company') || 'your organisation';
+    } catch (_) {}
+
+    const confirmed = confirm(`Do you want to log out of "${currentComp}" and sign in as another company?`);
+    if (!confirmed) return;
+
+    try {
+      localStorage.removeItem('ds_company');
+      localStorage.removeItem('ds_onboarding');
+    } catch (_) {}
+
+    let loginUrl = '/#/login';
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      loginUrl = 'http://localhost:5173/#/login';
+    } else if (window.location.hostname.includes('distrisense-api.onrender.com')) {
+      loginUrl = 'https://distrisense-web.onrender.com/#/login';
+    } else {
+      loginUrl = `${window.location.origin}/#/login`;
+    }
+    window.location.href = loginUrl;
+  }
+
+  function returnToOverview(e) {
+    if (e) e.preventDefault();
+    let overviewUrl = '/#overview';
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      overviewUrl = 'http://localhost:5173/#overview';
+    } else if (window.location.hostname.includes('distrisense-api.onrender.com')) {
+      overviewUrl = 'https://distrisense-web.onrender.com/#overview';
+    } else {
+      overviewUrl = `${window.location.origin}/#overview`;
+    }
+    window.location.href = overviewUrl;
+  }
+
+  const btnSidebar = document.getElementById('btn-sidebar-switch-company');
+  const btnLink = document.getElementById('btn-sidebar-switch-link');
+  const btnTopbar = document.getElementById('btn-topbar-switch-company');
+  const brandHome = document.getElementById('link-brand-home');
+
+  if (btnSidebar) btnSidebar.addEventListener('click', logoutOrSwitch);
+  if (btnLink) btnLink.addEventListener('click', logoutOrSwitch);
+  if (btnTopbar) btnTopbar.addEventListener('click', logoutOrSwitch);
+  if (brandHome) brandHome.addEventListener('click', returnToOverview);
+}
+
 // --- Initialize on Page Load ---
 window.addEventListener('DOMContentLoaded', () => {
   initGreeting();
@@ -2923,6 +3021,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initCardSpotlight();
   initChartBand();
   initMapControls();
+  initAuthControls();
   const path = window.location.pathname.toLowerCase();
   const hash = window.location.hash.toLowerCase();
   if (path.includes('map') || hash.includes('map')) {
