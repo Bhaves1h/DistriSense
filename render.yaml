@@ -1,7 +1,7 @@
 services:
   - type: web
     name: distrisense-api
-    env: python
+    runtime: python
     rootDir: backend
     plan: free
     buildCommand: pip install -r requirements.txt
@@ -14,8 +14,7 @@ services:
 
   - type: web
     name: distrisense-web
-    env: static
-    plan: free
+    runtime: static
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:
@@ -25,3 +24,7 @@ services:
         value: https://distrisense-api.onrender.com/
       - key: VITE_API_BASE_URL
         value: https://distrisense-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
