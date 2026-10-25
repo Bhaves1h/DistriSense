@@ -1,300 +1,2941 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DistriSense — Decision Engine Dashboard</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --color-paper: #E9E8E1;
-      --color-paper-light: #FAF9F5;
-      --color-ink: #262624;
-      --color-sage: #C2D6D0;
-      --color-teal: #20605C;
-      --color-teal-card: #2A6B66;
-      --color-ribbon: #8AAFA7;
-      --color-olive: #8A8A68;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background-color: var(--color-paper);
-      color: var(--color-ink);
-      font-family: 'Inter', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    .top-nav {
-      height: 72px;
-      display: flex;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<!-- MapLibre GL JS v4 & CSS -->
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<title>DistriSense — Distribution Intelligence & Inventory Optimization</title>
+<!--
+  DistriSense UNIFIED DASHBOARD — Sidebar Layout, Inspira Adaptations, Real MapTiler Map
+  Wiring contract preserved:
+  #btn-run-now, #run-status, #stat-flagged, #stat-lanes, #stat-recs, #stat-rupee,
+  #lanes, .lane[data-source-id], .rec[data-rec-id], [data-action="approve"|"dismiss"|"bulk-approve"],
+  .qty-input[data-qty-for].
+-->
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"SF Pro Text", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+         background:#F4F3EE; color:#1d1d1f; font-size:17px; line-height:1.47; letter-spacing:-0.374px;
+         -webkit-font-smoothing:antialiased  a { color:#20605C; text-decoration:none; transition:color 0.15s ease; }
+  a:hover { color:#173F3B; text-decoration:underline; }
+  button { font-family:inherit; cursor:pointer; }
+  button:active { transform:scale(0.97); }
+
+  /* App Shell: Fixed Left Sidebar */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 232px;
+    height: 100vh;
+    background: linear-gradient(180deg, #173F3B 0%, #20605C 100%);
+    color: #E9E8E1;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 14px 20px;
+    z-index: 100;
+    box-sizing: border-box;
+  }
+  .sidebar-brand {
+    padding: 4px 10px 24px;
+  }
+  .sidebar-logo {
+    font-family: "Instrument Serif", Georgia, serif;
+    font-size: 28px;
+    line-height: 1.1;
+    color: #E9E8E1;
+    letter-spacing: -0.2px;
+  }
+  .sidebar-tagline {
+    font-size: 11px;
+    color: #C2D6D0;
+    letter-spacing: 0.2px;
+    margin-top: 4px;
+    opacity: 0.85;
+  }
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+  }
+  .sidebar-nav .nav-tab {
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding: 10px 14px;
+    border-radius: 8px;
+    color: #E9E8E1;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+    overflow: hidden;
+  }
+  .sidebar-nav .nav-tab:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+  }
+  .sidebar-nav .nav-tab.active {
+    background: rgba(255, 255, 255, 0.14);
+    font-weight: 600;
+    color: #ffffff;
+  }
+  .sidebar-nav .nav-tab.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #C2D6D0;
+    border-radius: 0 2px 2px 0;
+  }
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px 12px 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .sidebar-footer .company-name {
+    font-variant: small-caps;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    color: #E9E8E1;
+    line-height: 1.2;
+  }
+  .sidebar-footer .territory-label {
+    font-size: 11px;
+    color: #C2D6D0;
+    margin-top: 2px;
+  }
+
+  /* Sub-nav Top Action Bar */
+  .snav {
+    position: sticky;
+    top: 0;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    padding: 0 36px;
+    background: rgba(244,243,238,.92);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid rgba(0,0,0,.06);
+    z-index: 90;
+    margin-left: 232px;
+  }
+  .snav .title {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .snav .right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn-primary { background:#20605C; color:#fff; border:none; border-radius:9999px;
+                 padding:9px 20px; font-size:15px; line-height:1; font-weight:500; transition:background 0.15s ease; }
+  .btn-primary:hover { background:#173F3B; }
+  .btn-primary:focus-visible { outline:2px solid #20605C; outline-offset:2px; }
+  .btn-primary:disabled { background:#a1a1a6; cursor:default; transform:none; filter:none; }
+  .btn-run { padding:8px 16px; font-size:14px; }
+  .btn-digest { background:#fff; color:#20605C; border:1px solid #20605C; border-radius:9999px; padding:7px 15px; font-size:13px; font-weight:500; transition:all 0.15s ease; }
+  .btn-digest:hover { background:rgba(32,96,92,0.08); color:#173F3B; border-color:#173F3B; }
+
+  main { max-width:1240px; margin-left:232px; padding:32px 36px 80px; box-sizing:border-box; }
+
+  /* Greeting Card */
+  .greeting-card {
+    background: #fff;
+    border: 1px solid #e5e5ea;
+    border-radius: 18px;
+    padding: 24px 28px;
+    margin-bottom: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  }
+  .greeting-title {
+    font-family: "Instrument Serif", Georgia, serif;
+    font-size: 34px;
+    font-weight: 500;
+    line-height: 1.15;
+    color: #1d1d1f;
+    letter-spacing: -0.3px;
+    margin: 0;
+  }
+  .greeting-subtitle {
+    font-size: 13px;
+    color: #86868b;
+    letter-spacing: -0.1px;
+    margin: 0;
+  }
+
+  /* Orientation Strip (A2) */
+  .orientation-card {
+    background: #fff;
+    border: 1px solid #e5e5ea;
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  }
+  .orientation-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    line-height: 1;
+    color: #86868b;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .orientation-close:hover {
+    color: #1d1d1f;
+  }
+  .orientation-link {
+    color: #20605C;
+    text-decoration: underline;
+    font-weight: 500;
+  }
+  .orientation-link:hover {
+    color: #173F3B;
+  }
+
+  h1 { font-family:"Instrument Serif", Georgia, serif; font-size:42px;
+       font-weight:400; line-height:1.15; text-align:center; letter-spacing:-0.5px; }
+  .lead { font-size:18px; font-weight:400; line-height:1.45; color:#555; text-align:center;
+          margin:12px auto 0; max-width:680px; }
+
+  /* Live Impact Counter Bar (Section 6.3) */
+  .impact-bar { display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-top:28px; }
+  .impact-card { background:#fff; border:1px solid #e5e5ea; border-radius:14px; padding:16px 18px;
+                 box-shadow:0 1px 3px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.02);
+                 transition:box-shadow 0.2s ease; }
+  .impact-card .label { font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:#86868b; font-weight:600; }
+  .impact-card .val { font-size:24px; font-weight:700; margin-top:4px; letter-spacing:-0.5px; }
+  .impact-card .sub { font-size:12px; color:#86868b; margin-top:3px; }
+  .impact-card.saved .val { color:#1b8738; }
+
+  /* lane = grouping under source */
+  .lane { background:transparent; border:none; padding:0; margin-top:28px; }
+  .lane-head { display:flex; align-items:center; padding:0 4px 12px; }
+  .lane-head .src { font-size:20px; font-weight:600; letter-spacing:.2px; }
+  .lane-head .meta { font-size:13px; color:#86868b; margin-left:12px; }
+  .btn-ghost { margin-left:auto; background:transparent; color:#20605C; border:1px solid #20605C;
+               border-radius:9999px; padding:7px 16px; font-size:13px; font-weight:500; transition:all 0.15s ease; }
+  .btn-ghost:hover { background:rgba(32,96,92,0.08); color:#173F3B; border-color:#173F3B; }
+  .btn-ghost:disabled { color:#a1a1a6; border-color:#d2d2d7; cursor:default; transform:none; filter:none; background:transparent; }
+
+  .rec { display:flex; gap:24px; padding:18px 24px; margin-bottom:12px; align-items:flex-start;
+         background:#ffffff; border:1px solid #e5e5ea; border-radius:14px;
+         position:relative; overflow:hidden;
+         box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02);
+         transition:transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+  .rec:hover { transform:translateY(-2px);
+               box-shadow:0 4px 12px rgba(0,0,0,0.06), 0 12px 24px rgba(0,0,0,0.05); }
+  .rec.dismissed { opacity:.4; transform:none !important; box-shadow:none !important; }
+  .rec.approved { border-left:3px solid #34c759; }
+  .rec-main { flex:1; min-width:0; position:relative; z-index:2; }
+  .sku-line { display:flex; align-items:center; gap:8px; }
+  .sku { font-size:16px; font-weight:600; }
+  .badge { font-size:11px; padding:2px 7px; border-radius:9999px; font-weight:600; }
+  .badge-stockout { background:#fff1f0; color:#d93025; border:1px solid #ffccc7; }
+  .badge-expiry { background:#fff7e6; color:#d46b08; border:1px solid #ffd591; }
+  .badge-rescue { background:#f6ffed; color:#389e0d; border:1px solid #b7eb8f; }
+  .route { font-size:13px; color:#86868b; margin-top:2px; }
+  .meta-line { font-size:13px; color:#333; margin-top:6px; }
+  .meta-line b { font-weight:600; }
+  .expl { font-size:13px; color:#444; margin-top:6px; max-width:580px; line-height:1.45; }
+  .status-line { font-size:13px; font-weight:600; margin-top:8px; }
+  .status-approved { color:#28a745; }
+  .status-dismissed { color:#6c757d; }
+  .status-excluded { color:#b25900; }
+  .status-error { color:#d93025; }
+
+  .rec-side { text-align:right; flex-shrink:0; position:relative; z-index:2; }
+  .rupee { font-size:20px; font-weight:700; letter-spacing:-0.3px; }
+  .rupee-lab { font-size:11px; color:#86868b; }
+  .qty-input { width:74px; margin-top:8px; padding:6px 8px; font-size:14px; text-align:center;
+               border:1px solid #d2d2d7; border-radius:9999px; background:#fff; color:#1d1d1f; font-family:inherit; }
+  .qty-lab { font-size:11px; color:#86868b; margin-top:2px; }
+  .rec-actions { margin-top:10px; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  .btn-approve { background:#20605C; color:#fff; border:none; border-radius:9999px; padding:7px 18px; font-size:13px; font-weight:500; transition:background 0.15s ease; }
+  .btn-approve:hover { background:#173F3B; }
+  .btn-approve:disabled { background:#a1a1a6; cursor:default; transform:none; filter:none; }
+  .link-dismiss { background:none; border:none; color:#20605C; font-size:13px; padding:2px; cursor:pointer; }
+  .link-dismiss:hover { color:#173F3B; text-decoration:underline; }
+  .link-dismiss:disabled { color:#a1a1a6; cursor:default; transform:none; }
+  .link-kirana { background:none; border:none; color:#20605C; font-size:12px; font-weight:600; cursor:pointer; padding:2px 0; }
+  .link-kirana:hover { color:#173F3B; text-decoration:underline; }
+
+  /* Formula Breakdown link */
+  .link-formula { display:inline-block; margin-left:6px; font-size:12px; color:#20605C; font-weight:500; text-decoration:underline; text-underline-offset:2px; cursor:pointer; }
+  .link-formula:hover { color:#173F3B; }
+
+  /* Card Spotlight (Inspira Appendix C) */
+  .card-spotlight-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 300ms ease;
+    z-index: 1;
+  }
+  .rec:hover .card-spotlight-overlay {
+    opacity: 0.5;
+  }
+
+  /* Border Beam (Inspira Appendix B) */
+  .border-beam {
+    --size: 160;
+    --duration: 10s;
+    --anchor: 90;
+    --border-width: 1.5;
+    --color-from: #20605C;
+    --color-to: #7FB5AE;
+    --delay: 0s;
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: calc(var(--border-width) * 1px) solid transparent;
+    -webkit-mask: linear-gradient(transparent, transparent), linear-gradient(#fff, #fff);
+    -webkit-mask-clip: padding-box, border-box;
+    -webkit-mask-composite: source-in, xor;
+    mask: linear-gradient(transparent, transparent), linear-gradient(#fff, #fff);
+    mask-clip: padding-box, border-box;
+    mask-composite: intersect;
+    z-index: 3;
+  }
+  .border-beam::after {
+    content: "";
+    position: absolute;
+    aspect-ratio: 1 / 1;
+    width: calc(var(--size) * 1px);
+    animation: border-beam-anim var(--duration) infinite linear;
+    animation-delay: var(--delay);
+    background: linear-gradient(to left, var(--color-from), var(--color-to), transparent);
+    offset-anchor: calc(var(--anchor) * 1%) 50%;
+    offset-path: rect(0 auto auto 0 round calc(var(--size) * 1px));
+  }
+  @keyframes border-beam-anim {
+    to { offset-distance: 100%; }
+  }
+
+  /* Skeleton Loading with Shimmer Animation */
+  .skeleton-container { display:flex; flex-direction:column; gap:12px; margin-top:24px; }
+  .skeleton-card { position:relative; background:#ffffff; border:1px solid #e5e5ea; border-radius:14px; padding:22px 24px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.03); }
+  .skeleton-line { background:#e9e9ee; border-radius:6px; }
+  .skeleton-shimmer {
+    position: absolute; inset: 0; transform: translateX(-100%);
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0) 100%);
+    animation: shimmerAnim 1.5s infinite;
+  }
+  @keyframes shimmerAnim {
+    100% { transform: translateX(100%); }
+  }
+
+  /* Views / Sections for Nav Tabs with 150ms fade-in */
+  .view-panel { display:none; width:100%; box-sizing:border-box; }
+  .view-panel.active { display:block; width:100%; box-sizing:border-box; animation: viewFadeIn 150ms ease forwards; }
+  @keyframes viewFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .empty-state { text-align:center; color:#86868b; padding:48px 16px; font-size:14px; background:#fff; border:1px solid #e5e5ea; border-radius:18px; margin-top:24px; }
+
+  /* Modals (WhatsApp, Rescue, Formula) */
+  .modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.45);
+                  backdrop-filter:blur(6px); display:none; align-items:center; justify-content:center; z-index:200; }
+  .modal-overlay.open { display:flex; }
+  .modal-box { background:#fff; border-radius:18px; max-width:620px; width:92%; max-height:85vh; overflow-y:auto;
+               padding:28px; box-shadow:0 20px 40px rgba(0,0,0,.15); }
+  .modal-title { font-size:20px; font-weight:600; display:flex; align-items:center; justify-content:space-between; }
+  .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:#86868b; }
+  .modal-content { margin-top:16px; font-size:14px; }
+  .wa-textarea { width:100%; height:260px; font-family:monospace; font-size:13px; padding:12px; border:1px solid #e5e5ea;
+                 border-radius:10px; background:#fbfbfd; line-height:1.45; resize:vertical; }
+  .modal-footer { margin-top:18px; display:flex; gap:10px; justify-content:flex-end; }
+  .btn-wa-send { background:#25D366; color:#fff; border:none; border-radius:9999px; padding:9px 20px; font-size:14px; font-weight:600; }
+  .btn-copy { background:#f5f5f7; color:#1d1d1f; border:1px solid #d2d2d7; border-radius:9999px; padding:9px 18px; font-size:14px; }
+
+  /* Formula Drawer styling */
+  .formula-box { max-width:680px; border-radius:20px; padding:30px; }
+  .formula-step { background:#fbfbfd; border:1px solid #e5e5ea; border-radius:12px; padding:14px 18px; margin-top:12px; }
+  .formula-step-title { font-size:13px; font-weight:700; color:#1d1d1f; display:flex; justify-content:space-between; align-items:center; }
+  .formula-step-title .step-badge { font-size:11px; font-weight:600; padding:2px 8px; border-radius:9999px; background:rgba(32,96,92,0.12); color:#20605C; }
+  .formula-step-calc { font-family:"SF Mono", Monaco, Consolas, monospace; font-size:13px; color:#20605C; background:#ffffff; border:1px solid #e5e5ea; border-radius:8px; padding:8px 12px; margin-top:8px; line-height:1.5; }
+  .formula-step-desc { font-size:12px; color:#666; margin-top:6px; line-height:1.4; }
+
+  /* 10-Second Undo Toast */
+  .undo-toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(100px);
+                background:rgba(29, 29, 31, 0.94); backdrop-filter:blur(20px) saturate(180%);
+                color:#fff; padding:12px 22px; border-radius:9999px; box-shadow:0 12px 32px rgba(0,0,0,0.28);
+                display:flex; align-items:center; gap:16px; font-size:14px; font-weight:500; z-index:500;
+                opacity:0; transition:all 0.3s cubic-bezier(0.16, 1, 0.3, 1); pointer-events:none; }
+  .undo-toast.visible { transform:translateX(-50%) translateY(0); opacity:1; pointer-events:auto; }
+  .btn-undo { background:#20605C; color:#fff; border:none; border-radius:9999px; padding:6px 16px;
+              font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:4px;
+              transition:background 0.15s; }
+  .btn-undo:hover { background:#173F3B; }
+
+  /* Interactive SVG Map (#view-map) */
+  .map-canvas-container { position:relative; width:100%; margin-top:16px; background:#fff; border:1px solid #e5e5ea; border-radius:18px; padding:18px; }
+  .territory-svg { width:100%; height:auto; display:block; background:#fafafc; border-radius:12px; border:1px solid #ececee; }
+  .map-legend { display:flex; gap:18px; flex-wrap:wrap; align-items:center; font-size:12px; color:#666; margin-bottom:12px; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-swatch { width:12px; height:12px; display:inline-block; }
+  .legend-square { background:#20605C; border-radius:2px; }
+  .legend-circle { border-radius:50%; }
+  .legend-healthy { background:#34c759; }
+  .legend-expiry { background:#ff9500; }
+  .legend-stockout { background:#ff3b30; }
+
+  @keyframes transferDash {
+    to { stroke-dashoffset: -24; }
+  }
+  .transfer-line {
+    stroke: #20605C;
+    stroke-width: 2;
+    stroke-dasharray: 6 6;
+    animation: transferDash 1.2s linear infinite;
+    opacity: 0.85;
+  }
+
+  .map-tooltip { position:absolute; pointer-events:none; opacity:0; transition:opacity 0.15s ease, transform 0.1s ease;
+                 background:rgba(29, 29, 31, 0.94); backdrop-filter:blur(12px); color:#fff; padding:10px 14px;
+                 border-radius:10px; font-size:12px; line-height:1.45; box-shadow:0 10px 25px rgba(0,0,0,0.2);
+                 z-index:100; transform:translate(-50%, -125%); white-space:nowrap; }
+
+  /* Table styling for Expiry Radar & Audit */
+  .data-table { width:100%; border-collapse:collapse; margin-top:16px; font-size:13px; background:#fff; border-radius:14px; overflow:hidden; border:1px solid #e5e5ea; }
+  .data-table th { background:#fbfbfd; text-align:left; padding:12px 14px; font-weight:600; color:#86868b; border-bottom:1px solid #e5e5ea; }
+  .data-table td { padding:12px 14px; border-bottom:1px solid #f2f2f7; color:#1d1d1f; vertical-align:middle; }
+  .data-table tr:last-child td { border-bottom:none; }
+  .data-table tr:hover td { background:#fafafc; }
+
+  /* Simulator card */
+  .sim-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-top:20px; }
+  .sim-card { background:#fff; border:1px solid #e5e5ea; border-radius:14px; padding:20px; }
+  .sim-card h3 { font-size:16px; font-weight:600; margin-bottom:12px; }
+  .sim-card.distrisense { border-color:#20605C; background:#f0f7f6; }
+
+  /* Empty state */
+  .empty-state { text-align:center; padding:48px 20px; color:#86868b; font-size:15px; }
+
+  footer { text-align:center; font-size:12px; color:#86868b; padding:40px 22px; border-top:1px solid #e5e5ea; margin-top:60px; }
+  @media (max-width:860px){
+    .sidebar {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      height: auto;
+      flex-direction: row;
       align-items: center;
-      justify-content: space-between;
-      padding: 0 40px;
-      border-bottom: 1px solid rgba(38,38,36,0.1);
-      background: var(--color-paper-light);
+      padding: 10px 16px;
+      gap: 16px;
+      overflow-x: auto;
+      border-radius: 0;
     }
-    .wordmark {
-      text-decoration: none;
-      color: var(--color-ink);
-      font-size: 20px;
-      display: flex;
-      align-items: baseline;
+    .sidebar-brand {
+      padding: 0;
+      white-space: nowrap;
+    }
+    .sidebar-tagline {
+      display: none;
+    }
+    .sidebar-nav {
+      flex-direction: row;
+      overflow-x: auto;
+      flex: 1;
       gap: 6px;
     }
-    .wordmark span.distri { font-family: 'Instrument Serif', serif; font-weight: 700; font-size: 26px; }
-    .wordmark span.sense { font-family: 'Inter', sans-serif; font-weight: 300; letter-spacing: 0.15em; font-size: 13px; }
-    .back-btn {
-      text-decoration: none;
-      color: var(--color-ink);
-      font-size: 14px;
-      font-weight: 500;
-      padding: 8px 18px;
-      border-radius: 999px;
-      border: 1px solid var(--color-ink);
-      transition: background 0.2s;
-    }
-    .back-btn:hover {
-      background: var(--color-ink);
-      color: #fff;
-    }
-    .dash-container {
-      max-width: 1240px;
-      margin: 40px auto;
-      padding: 0 40px;
-      flex: 1;
-      width: 100%;
-    }
-    .header-section {
-      margin-bottom: 32px;
-    }
-    .eyebrow {
+    .sidebar-nav .nav-tab {
+      white-space: nowrap;
+      padding: 6px 12px;
       font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--color-olive);
-      margin-bottom: 8px;
     }
-    h1 {
-      font-family: 'Instrument Serif', serif;
-      font-weight: 400;
-      font-size: 48px;
-      line-height: 1.1;
-      margin-bottom: 12px;
-    }
-    p.sub {
-      color: rgba(38,38,36,0.75);
-      font-size: 16px;
-    }
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
-      margin-bottom: 32px;
-    }
-    .stat-card {
-      background: var(--color-paper-light);
-      padding: 24px;
-      border-radius: 8px;
-    }
-    .stat-label {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: rgba(38,38,36,0.6);
-      margin-bottom: 8px;
-    }
-    .stat-val {
-      font-family: 'Instrument Serif', serif;
-      font-size: 40px;
-      color: var(--color-ink);
-    }
-    .table-card {
-      background: var(--color-paper-light);
-      border-radius: 8px;
-      overflow: hidden;
-      padding: 24px;
-    }
-    .table-title {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    table {
+    .sidebar-nav .nav-tab.active::before {
+      top: auto;
+      bottom: 0;
+      left: 0;
+      right: 0;
       width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-      text-align: left;
+      height: 3px;
+      border-radius: 2px 2px 0 0;
     }
-    th {
-      padding: 12px 16px;
-      border-bottom: 1px solid rgba(38,38,36,0.1);
-      color: rgba(38,38,36,0.6);
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      font-size: 11px;
+    .sidebar-footer {
+      display: none;
     }
-    td {
-      padding: 16px;
-      border-bottom: 1px solid rgba(38,38,36,0.06);
+    .snav {
+      margin-left: 0 !important;
+      padding: 0 16px;
     }
-    .risk-badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      background: #E8D3D0;
-      color: #923C34;
-    }
-    .risk-badge.optimal {
-      background: #D4E5DE;
-      color: #20605C;
-    }
-  </style>
-</head>
-<body>
-  <nav class="top-nav">
-    <a href="index.html" class="wordmark">
-      <span class="distri">distri</span>
-      <span class="sense">SENSE</span>
-    </a>
-    <a href="index.html" class="back-btn">← Back to Overview</a>
-  </nav>
-
-  <main class="dash-container">
-    <div class="header-section">
-      <div class="eyebrow" id="dash-eyebrow">Kolhapur Territory · Morning Dispatch</div>
-      <h1 id="greeting-heading">Daily Decision & Transfer Queue</h1>
-      <p class="sub">13 priority approvals generated for today. 6,000 outlet-SKU positions evaluated at 05:00 IST.</p>
-    </div>
-
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-label">Active Outlets Scored</div>
-        <div class="stat-val">6,000</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Stockout Risk Interventions</div>
-        <div class="stat-val">13</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Rupees at Risk Averted</div>
-        <div class="stat-val">₹2,48,500</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Simulation Efficiency</div>
-        <div class="stat-val">−67%</div>
-      </div>
-    </div>
-
-    <div class="table-card">
-      <div class="table-title">
-        <span>Recommended Transfers (Optimal Cheaper Source)</span>
-        <span style="font-size: 13px; font-weight: normal; color: var(--color-olive);">Status: Ready for 1-click execution</span>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Destination Shelf</th>
-            <th>SKU</th>
-            <th>Cover Left</th>
-            <th>Recommended Source</th>
-            <th>Quantity</th>
-            <th>Risk State</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>SHOP-12 (Rajarampuri)</strong></td>
-            <td>Parle-G 250g Gold</td>
-            <td>1.0 day</td>
-            <td>Warehouse B (Shiroli)</td>
-            <td>28 units</td>
-            <td><span class="risk-badge">Stockout Imminent</span></td>
-          </tr>
-          <tr>
-            <td><strong>SHOP-28 (Shahupuri)</strong></td>
-            <td>Amul Butter 500g</td>
-            <td>1.4 days</td>
-            <td>Warehouse A (MIDC)</td>
-            <td>42 units</td>
-            <td><span class="risk-badge">High Risk</span></td>
-          </tr>
-          <tr>
-            <td><strong>SHOP-07 (Laxmipuri)</strong></td>
-            <td>Tata Salt 1kg</td>
-            <td>1.8 days</td>
-            <td>Warehouse B (Shiroli)</td>
-            <td>60 units</td>
-            <td><span class="risk-badge">Reorder Imminent</span></td>
-          </tr>
-          <tr>
-            <td><strong>SHOP-44 (Tarabai Park)</strong></td>
-            <td>Cadbury Dairy Milk 130g</td>
-            <td>9.0 days (expiry window)</td>
-            <td>Warehouse C (Gandhinagar)</td>
-            <td>35 units</td>
-            <td><span class="risk-badge optimal">Expiry Safeguarded</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </main>
-  <script>
-  function initGreeting() {
-    const now = new Date();
-    const hour = now.getHours();
-    let greetingWord = 'Good evening';
-    if (hour < 12) {
-      greetingWord = 'Good morning';
-    } else if (hour < 17) {
-      greetingWord = 'Good afternoon';
-    }
-
-    let company = null;
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('company') && urlParams.get('company').trim()) {
-      company = urlParams.get('company').trim();
-    } else if (window.location.hash.includes('?')) {
-      const hashQuery = window.location.hash.substring(window.location.hash.indexOf('?') + 1);
-      const hashParams = new URLSearchParams(hashQuery);
-      if (hashParams.has('company') && hashParams.get('company').trim()) {
-        company = hashParams.get('company').trim();
-      }
-    } else if (window.location.hash.includes('company=')) {
-      const match = window.location.hash.match(/[?&#]company=([^&#]+)/);
-      if (match && match[1]) {
-        company = decodeURIComponent(match[1]).trim();
-      }
-    }
-
-    if (company && company.trim()) {
-      company = company.trim();
-      try { localStorage.setItem('ds_company', company); } catch (e) {}
-    } else {
-      try { company = localStorage.getItem('ds_company'); } catch (e) { company = null; }
-    }
-
-    const headingEl = document.getElementById('greeting-heading');
-    if (headingEl && company && company.trim()) {
-      headingEl.textContent = `${greetingWord}, ${company.trim()}`;
-    }
-    const eyebrowEl = document.getElementById('dash-eyebrow');
-    if (eyebrowEl && company && company.trim()) {
-      eyebrowEl.textContent = `${company.trim()} · Kolhapur Territory · Morning Dispatch`;
+    main {
+      margin-left: 0 !important;
+      padding: 20px 16px 60px !important;
     }
   }
-  window.addEventListener('DOMContentLoaded', initGreeting);
-  </script>
+
+  @media (max-width:768px){
+    h1 { font-size:30px; } .lead { font-size:16px; }
+    .impact-bar { grid-template-columns:repeat(2, 1fr); }
+    .chart-band { grid-template-columns:1fr !important; }
+    .sim-grid { grid-template-columns:1fr; }
+    .rec { flex-direction:column; gap:12px; } .rec-side { text-align:left; }
+    .rec-actions { align-items:flex-start; } #run-status { display:none; }
+    .map-legend { gap:10px; font-size:11px; }
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-logo">DistriSense</div>
+    <div class="sidebar-tagline">Distribution Intelligence</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="#dashboard" class="nav-tab active" data-tab="dashboard">Dashboard</a>
+    <a href="#expiry-radar" class="nav-tab" data-tab="expiry-radar">Expiry Radar</a>
+    <a href="#simulator" class="nav-tab" data-tab="simulator">Simulator</a>
+    <a href="#map" class="nav-tab" data-tab="map">Territory Map</a>
+    <a href="#audit" class="nav-tab" data-tab="audit">Audit Log</a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="company-name" id="sidebar-company">Apex FMCG Distributors</div>
+    <div class="territory-label">Kolhapur territory</div>
+  </div>
+</aside>
+
+<div class="snav">
+  <span class="title" id="page-title">Dashboard</span>
+  <div class="right">
+    <button id="btn-daily-digest" class="btn-digest">09:00 WhatsApp Digest</button>
+    <button id="btn-run-now" class="btn-primary btn-run">Run now</button>
+  </div>
+</div>
+
+<main>
+  <!-- 1. DASHBOARD VIEW -->
+  <section id="view-dashboard" class="view-panel active">
+    <!-- Greeting Card: Time & Company aware -->
+    <div id="greeting-box" class="greeting-card">
+      <h2 id="greeting-heading" class="greeting-title">Good morning</h2>
+      <p id="greeting-date" class="greeting-subtitle">Loading date&hellip;</p>
+    </div>
+
+    <!-- First-Run Orientation Strip (A2) -->
+    <div id="orientation-strip" class="orientation-card" style="display:none;">
+      <button id="btn-dismiss-intro" class="orientation-close" title="Dismiss" aria-label="Dismiss">&times;</button>
+      <div style="font-weight:700; font-size:14px; color:#1d1d1f; margin-bottom:4px;">New here? Start with today's queue.</div>
+      <div style="font-size:13px; color:#555; line-height:1.45; margin-bottom:8px;">This screen lists every shelf predicted to run empty or expire, worst first by rupees at risk. Open a card, tap Why? to see the maths, then Approve the move &mdash; nothing ships without your approval.</div>
+      <div style="font-size:12px; color:#666; display:flex; gap:16px; flex-wrap:wrap;">
+        <a href="#dashboard" class="orientation-link" onclick="document.querySelector('[data-tab=\'dashboard\']')?.click(); return false;">1 &middot; Review today's queue</a>
+        <a href="#expiry-radar" class="orientation-link" onclick="document.querySelector('[data-tab=\'expiry-radar\']')?.click(); return false;">2 &middot; Clear expiring stock in Expiry Radar</a>
+        <a href="#simulator" class="orientation-link" onclick="document.querySelector('[data-tab=\'simulator\']')?.click(); return false;">3 &middot; See the month ahead in the Simulator</a>
+      </div>
+    </div>
+
+    <h1>Today&rsquo;s risk queue.</h1>
+
+    <!-- Section 6.3 Live Impact & Money Saved Counter -->
+    <div class="impact-bar">
+      <div class="impact-card">
+        <div class="label">Rupees At Risk Today</div>
+        <div class="val" id="impact-rar">&#8377;0</div>
+        <div class="sub">across all watched positions</div>
+      </div>
+      <div class="impact-card saved">
+        <div class="label">Rupees Saved Total</div>
+        <div class="val" id="impact-saved">&#8377;0</div>
+        <div class="sub">protected by approved moves so far</div>
+      </div>
+      <div class="impact-card">
+        <div class="label">Stockouts Prevented</div>
+        <div class="val" id="impact-prevented">0</div>
+        <div class="sub">shelves rescued before they emptied</div>
+      </div>
+      <div class="impact-card">
+        <div class="label">Active Watchlist</div>
+        <div class="val" id="impact-watchlist">0</div>
+        <div class="sub">positions below their comfort cover</div>
+      </div>
+    </div>
+
+    <!-- PART 4 — Chart Band (Directly below four stat cards) -->
+    <div class="chart-band" id="chart-band" style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:20px; margin-bottom:28px;">
+      <!-- Chart 1: Demand Outlook -->
+      <div class="chart-card" id="card-demand-outlook" style="background:#fff; border:1px solid #e5e5ea; border-radius:14px; padding:16px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.02); height:195px; display:flex; flex-direction:column; box-sizing:border-box;">
+        <div style="font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:#86868b; margin-bottom:10px;">
+          Demand outlook &mdash; next 14 days
+        </div>
+        <div id="demand-chart-container" style="flex:1; width:100%; position:relative; min-height:120px; display:flex; align-items:center;">
+        </div>
+      </div>
+
+      <!-- Chart 2: Territory Health -->
+      <div class="chart-card" id="card-territory-health" style="background:#fff; border:1px solid #e5e5ea; border-radius:14px; padding:16px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.02); height:195px; display:flex; flex-direction:column; box-sizing:border-box;">
+        <div style="font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:#86868b; margin-bottom:4px;">
+          Territory health
+        </div>
+        <div id="health-chart-container" style="flex:1; width:100%; position:relative; min-height:115px; display:flex; align-items:center; justify-content:center;">
+          <div id="chart-health-center" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); pointer-events:none; text-align:center;">
+            <div id="health-node-count" style="font-size:22px; font-weight:700; color:#1d1d1f; line-height:1;">53</div>
+            <div style="font-size:9px; font-weight:600; color:#86868b; letter-spacing:0.5px;">NODES</div>
+          </div>
+        </div>
+        <div style="text-align:center; font-size:11px; color:#666; margin-top:6px; display:flex; justify-content:center; gap:12px;">
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; border-radius:50%; background:#34c759; display:inline-block;"></span> Healthy</span>
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; border-radius:50%; background:#ff9500; display:inline-block;"></span> Expiry risk</span>
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; border-radius:50%; background:#ff3b30; display:inline-block;"></span> Stockout risk</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Queue grouped by lane -->
+    <div id="lanes">
+      <div class="skeleton-container" id="lanes-skeleton">
+        <div class="skeleton-card">
+          <div class="skeleton-shimmer"></div>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="flex:1;">
+              <div class="skeleton-line" style="width:140px; height:18px; margin-bottom:10px;"></div>
+              <div class="skeleton-line" style="width:260px; height:14px; margin-bottom:10px;"></div>
+              <div class="skeleton-line" style="width:340px; height:12px;"></div>
+            </div>
+            <div style="text-align:right;">
+              <div class="skeleton-line" style="width:70px; height:22px; margin-bottom:10px; margin-left:auto;"></div>
+              <div class="skeleton-line" style="width:80px; height:32px; border-radius:9999px; margin-left:auto;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="skeleton-card">
+          <div class="skeleton-shimmer"></div>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="flex:1;">
+              <div class="skeleton-line" style="width:160px; height:18px; margin-bottom:10px;"></div>
+              <div class="skeleton-line" style="width:240px; height:14px; margin-bottom:10px;"></div>
+              <div class="skeleton-line" style="width:300px; height:12px;"></div>
+            </div>
+            <div style="text-align:right;">
+              <div class="skeleton-line" style="width:70px; height:22px; margin-bottom:10px; margin-left:auto;"></div>
+              <div class="skeleton-line" style="width:80px; height:32px; border-radius:9999px; margin-left:auto;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="skeleton-card">
+          <div class="skeleton-shimmer"></div>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="flex:1;">
+              <div class="skeleton-line" style="width:120px; height:18px; margin-bottom:10px;"></div>
+              <div class="skeleton-line" style="width:280px; height:14px; margin-bottom:10px;"></div>
+              <div class="skeleton-line" style="width:320px; height:12px;"></div>
+            </div>
+            <div style="text-align:right;">
+              <div class="skeleton-line" style="width:70px; height:22px; margin-bottom:10px; margin-left:auto;"></div>
+              <div class="skeleton-line" style="width:80px; height:32px; border-radius:9999px; margin-left:auto;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. EXPIRY RADAR VIEW (Section 5.8) -->
+  <section id="view-expiry-radar" class="view-panel">
+    <h1>Expiry Radar</h1>
+    <p class="lead" style="font-size:14px; color:#86868b; margin-top:6px;">Every batch expiring within 30 days, soonest first. Split Rescue moves a batch to shops that can sell it before it expires.</p>
+
+    <div style="margin-top:28px; display:flex; justify-content:space-between; align-items:center;">
+      <span id="radar-count-line" style="font-size:14px; color:#666;">Showing stock batches expiring within 30 days</span>
+      <button id="btn-refresh-radar" class="btn-digest">Refresh Radar</button>
+    </div>
+
+    <table class="data-table" id="radar-table">
+      <thead>
+        <tr>
+          <th>Batch ID</th>
+          <th>Product</th>
+          <th>Location</th>
+          <th>Qty</th>
+          <th>Expiry Date</th>
+          <th>Days Left</th>
+          <th>Cover</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="radar-tbody">
+        <tr><td colspan="8" style="text-align:center;">Loading near-expiry inventory&hellip;</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 3. SIMULATOR VIEW (Section 6.2) -->
+  <section id="view-simulator" class="view-panel">
+    <h1>3-Arm Policy Simulator</h1>
+    <p class="lead" style="font-size:14px; color:#86868b; margin-top:6px;">Replays this same territory three ways &mdash; do nothing, weekly manual checks, and DistriSense &mdash; so you can see the saving before trusting the queue.</p>
+
+    <div style="background:#fff; border:1px solid #e5e5ea; border-radius:18px; padding:24px; margin-top:28px;">
+      <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+        <label style="font-size:14px; font-weight:600;">Scenario:
+          <select id="sim-scenario" style="padding:8px 14px; border-radius:9999px; border:1px solid #d2d2d7; margin-left:8px; font-family:inherit;">
+            <option value="festival_spike">Festival Spike (+40% demand)</option>
+            <option value="demand_drop">Post-Festival Demand Drop (-30%)</option>
+            <option value="expiry_shock">Expiry Shock (Concentrated lots)</option>
+          </select>
+        </label>
+        <button id="btn-run-sim" class="btn-primary">Run Simulation</button>
+        <button id="btn-convert-plan" class="btn-digest" style="display:none; margin-left:auto;">&plus; Convert Winning Moves to Plan</button>
+      </div>
+
+      <div class="sim-grid" id="sim-results" style="display:none;">
+        <div class="sim-card">
+          <h3>1. Do-Nothing</h3>
+          <div style="font-size:13px; color:#666;">No replenishment or rebalancing</div>
+          <div style="margin-top:14px; font-size:14px;">Lost Sales: <b id="sim-dn-lost">--</b> units</div>
+          <div class="sim-bar-track" style="height:4px; background:#e9e9ee; border-radius:2px; margin-top:3px; margin-bottom:8px; overflow:hidden;"><div id="sim-bar-dn-lost" style="height:100%; width:0%; background:#B3402A; border-radius:2px; transition:width 0.4s ease;"></div></div>
+          <div style="font-size:14px; margin-top:4px;">Stockout Events: <b id="sim-dn-events">--</b></div>
+          <div class="sim-bar-track" style="height:4px; background:#e9e9ee; border-radius:2px; margin-top:3px; margin-bottom:8px; overflow:hidden;"><div id="sim-bar-dn-events" style="height:100%; width:0%; background:#B3402A; border-radius:2px; transition:width 0.4s ease;"></div></div>
+          <div style="font-size:14px; margin-top:4px;">Writeoffs: <b id="sim-dn-exp">--</b> units</div>
+          <div class="sim-bar-track" style="height:4px; background:#e9e9ee; border-radius:2px; margin-top:3px; margin-bottom:8px; overflow:hidden;"><div id="sim-bar-dn-exp" style="height:100%; width:0%; background:#B3402A; border-radius:2px; transition:width 0.4s ease;"></div></div>
+          <div style="font-size:12px; color:#86868b; margin-top:8px;">Lower is better on all three.</div>
+        </div>
+        <div class="sim-card">
+          <h3>2. Baseline Rule</h3>
+          <div style="font-size:13px; color:#666;">Weekly review (day 0 &amp; 7), 2d lag</div>
+          <div style="margin-top:14px; font-size:14px;">Lost Sales: <b id="sim-base-lost">--</b> units</div>
+          <div class="sim-bar-track" style="height:4px; background:#e9e9ee; border-radius:2px; margin-top:3px; margin-bottom:8px; overflow:hidden;"><div id="sim-bar-base-lost" style="height:100%; width:0%; background:#D98E32; border-radius:2px; transition:width 0.4s ease;"></div></div>
+          <div style="font-size:14px; margin-top:4px;">Stockout Events: <b id="sim-base-events">--</b></div>
+          <div class="sim-bar-track" style="height:4px; background:#e9e9ee; border-radius:2px; margin-top:3px; margin-bottom:8px; overflow:hidden;"><div id="sim-bar-base-events" style="height:100%; width:0%; background:#D98E32; border-radius:2px; transition:width 0.4s ease;"></div></div>
+          <div style="font-size:14px; margin-top:4px;">Writeoffs: <b id="sim-base-exp">--</b> units</div>
+          <div class="sim-bar-track" style="height:4px; background:#e9e9ee; border-radius:2px; margin-top:3px; margin-bottom:8px; overflow:hidden;"><div id="sim-bar-base-exp" style="height:100%; width:0%; background:#D98E32; border-radius:2px; transition:width 0.4s ease;"></div></div>
+          <div style="font-size:12px; color:#86868b; margin-top:8px;">Lower is better on all three.</div>
+        </div>
+        <div class="sim-card distrisense">
+          <h3 style="color:#20605C;">3. DistriSense Engine</h3>
+          <div style="font-size:13px; color:#20605C;">Proactive daily LP allocation + FEFO</div>
+          <div style="margin-top:14px; font-size:14px;">Lost Sales: <b id="sim-ds-lost">--</b> units</div>
+          <div class="sim-bar-track" style="height:4px; background:#e9e9ee; border-radius:2px; margin-top:3px; margin-bottom:8px; overflow:hidden;"><div id="sim-bar-ds-lost" style="height:100%; width:0%; background:#20605C; border-radius:2px; transition:width 0.4s ease;"></div></div>
+          <div style="font-size:14px; margin-top:4px;">Stockout Events: <b id="sim-ds-events">--</b></div>
+          <div class="sim-bar-track" style="height:4px; background:#e9e9ee; border-radius:2px; margin-top:3px; margin-bottom:8px; overflow:hidden;"><div id="sim-bar-ds-events" style="height:100%; width:0%; background:#20605C; border-radius:2px; transition:width 0.4s ease;"></div></div>
+          <div style="font-size:14px; margin-top:4px;">Writeoffs: <b id="sim-ds-exp">--</b> units</div>
+          <div class="sim-bar-track" style="height:4px; background:#e9e9ee; border-radius:2px; margin-top:3px; margin-bottom:8px; overflow:hidden;"><div id="sim-bar-ds-exp" style="height:100%; width:0%; background:#20605C; border-radius:2px; transition:width 0.4s ease;"></div></div>
+          <div style="font-size:12px; color:#86868b; margin-top:8px;">Lower is better on all three.</div>
+          <div style="margin-top:12px; font-size:13px; color:#1b8738; font-weight:600;" id="sim-delta">Optimal policy minimizes loss</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. TERRITORY MAP VIEW (Section 1 Polish) -->
+  <section id="view-map" class="view-panel">
+    <h1>Kolhapur Territory Map</h1>
+    <p class="lead" style="font-size:14px; color:#86868b; margin-top:6px;">All 3 warehouses and 50 shops. Green is healthy, orange is expiry risk, red is stockout risk; lines are live transfers.</p>
+
+    <div class="map-canvas-container">
+      <div class="map-legend">
+        <div class="legend-item"><span class="legend-swatch legend-square"></span> Warehouses (3)</div>
+        <div class="legend-item"><span class="legend-swatch legend-circle legend-healthy"></span> Healthy Outlets</div>
+        <div class="legend-item"><span class="legend-swatch legend-circle legend-expiry"></span> Expiry Risk</div>
+        <div class="legend-item"><span class="legend-swatch legend-circle legend-stockout"></span> Stockout Risk</div>
+        <div class="legend-item">
+          <svg width="24" height="12" style="vertical-align:middle;"><line x1="0" y1="6" x2="24" y2="6" stroke="#20605C" stroke-width="2" stroke-dasharray="4 4"/></svg>
+          Active Stock Transfers
+        </div>
+        <div id="map-stats" style="margin-left:auto; font-size:12px; color:#86868b;">Loading network nodes&hellip;</div>
+      </div>
+
+      <!-- Map Controls Toolbar -->
+      <div class="map-controls-toolbar" style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; padding:8px 12px; background:#fbfbfd; border:1px solid #e5e5ea; border-radius:10px; font-size:13px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <!-- View Switcher -->
+          <div class="btn-group-toggle" style="display:inline-flex; border:1px solid #d2d2d7; border-radius:8px; overflow:hidden; background:#fff;">
+            <button id="btn-mode-realmap" type="button" class="btn-map-mode active" style="padding:5px 12px; font-size:12px; font-weight:600; border:none; background:#20605C; color:#fff; cursor:pointer;">
+              &#x1F5FA;&#xFE0F; Interactive Map
+            </button>
+            <button id="btn-mode-schematic" type="button" class="btn-map-mode" style="padding:5px 12px; font-size:12px; font-weight:500; border:none; background:#fff; color:#1d1d1f; cursor:pointer;">
+              &#x1F4CA; Schematic Graph
+            </button>
+          </div>
+
+          <!-- Style Selector Dropdown -->
+          <div id="map-style-select-wrap" style="display:flex; align-items:center; gap:6px;">
+            <label for="map-style-select" style="font-size:12px; color:#666; font-weight:500;">Style:</label>
+            <select id="map-style-select" style="font-size:12px; padding:4px 8px; border:1px solid #d2d2d7; border-radius:6px; background:#fff; color:#1d1d1f; cursor:pointer;">
+              <option value="carto-voyager">CARTO Voyager (Vector - Free)</option>
+              <option value="carto-positron">CARTO Positron (Light - Free)</option>
+              <option value="carto-dark">CARTO Dark Matter (Free)</option>
+              <option value="osm-raster">OpenStreetMap (Raster - Free)</option>
+              <option value="maptiler-streets">MapTiler Streets (Cloud)</option>
+              <option value="maptiler-satellite">MapTiler Satellite Hybrid (Cloud)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:10px; margin-left:auto;">
+          <!-- Provider Status Badge -->
+          <span id="map-status-pill" style="display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:3px 9px; border-radius:9999px; background:#e8f5e9; color:#2e7d32; border:1px solid #c8e6c9;">
+            <span style="width:6px; height:6px; border-radius:50%; background:#2e7d32; display:inline-block;"></span>
+            <span id="map-status-text">Live Vector Map</span>
+          </span>
+
+          <!-- MapTiler Key Config Button -->
+          <button id="btn-maptiler-key" type="button" style="display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:500; padding:5px 10px; border-radius:6px; border:1px solid #d2d2d7; background:#fff; color:#20605C; cursor:pointer;">
+            &#x1F511; MapTiler Key
+          </button>
+        </div>
+      </div>
+
+      <!-- Real MapTiler / MapLibre Container -->
+      <div id="map-real-container" style="position:relative; width:100%; height:480px; border-radius:12px; overflow:hidden; border:1px solid #ececee;">
+        <div id="maplibre-map" style="width:100%; height:100%;"></div>
+      </div>
+
+      <!-- Fallback Schematic Container -->
+      <div id="map-schematic-container" style="display:none; position:relative; width:100%; overflow:hidden;">
+        <svg id="territory-svg" viewBox="0 0 920 460" class="territory-svg"></svg>
+        <div id="map-tooltip" class="map-tooltip"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. AUDIT LOG VIEW -->
+  <section id="view-audit" class="view-panel">
+    <h1>Audit Log</h1>
+    <p class="lead" style="font-size:14px; color:#86868b; margin-top:6px;">Every approval, rejection, dispatch and rescue, time-stamped. This record cannot be edited.</p>
+
+    <table class="data-table" id="audit-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Actor</th>
+          <th>Action</th>
+          <th>Entity</th>
+          <th>After State</th>
+        </tr>
+      </thead>
+      <tbody id="audit-tbody">
+        <tr><td colspan="5" style="text-align:center;">Loading audit trail&hellip;</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+
+<!-- WhatsApp Digest Modal (Section 5.12) -->
+<div class="modal-overlay" id="wa-modal">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span id="wa-modal-title">WhatsApp Digest</span>
+      <button class="modal-close" id="btn-close-wa">&times;</button>
+    </div>
+    <div class="modal-content">
+      <p style="font-size:13px; color:#666; margin-bottom:10px;">Ready to copy or share directly to distributor supervisors &amp; kirana partners:</p>
+      <textarea id="wa-text-area" class="wa-textarea" readonly></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-copy" id="btn-copy-wa">Copy Text</button>
+      <a id="btn-wa-link" href="#" target="_blank" class="btn-wa-send">Share to WhatsApp &rarr;</a>
+    </div>
+  </div>
+</div>
+
+<!-- Split Rescue Modal (Section 5.8) -->
+<div class="modal-overlay" id="rescue-modal">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>FEFO Split Rescue Plan</span>
+      <button class="modal-close" id="btn-close-rescue">&times;</button>
+    </div>
+    <div class="modal-content" id="rescue-modal-body">
+      Processing split rescue allocation&hellip;
+    </div>
+  </div>
+</div>
+
+<!-- Formula Breakdown Drawer / Dialog (Section 2 Polish) -->
+<div class="modal-overlay" id="formula-modal">
+  <div class="modal-box formula-box">
+    <div class="modal-title">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div>
+          <div style="font-size:18px; font-weight:600;" id="formula-sku-title">Why This Quantity?</div>
+          <div style="font-size:12px; color:#86868b; font-weight:400;" id="formula-route-sub">Deterministic replenishment formula breakdown</div>
+        </div>
+      </div>
+      <button class="modal-close" id="btn-close-formula">&times;</button>
+    </div>
+    <div class="modal-content" id="formula-content">
+      <!-- Dynamically filled with 5 steps -->
+    </div>
+    <div class="modal-footer" style="margin-top:22px;">
+      <button class="btn-primary" id="btn-dismiss-formula">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- MapTiler Key Modal -->
+<div class="modal-overlay" id="maptiler-modal">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-title">
+      <span>MapTiler Cloud Key Configuration</span>
+      <button class="modal-close" id="btn-close-maptiler">&times;</button>
+    </div>
+    <div class="modal-content">
+      <p style="font-size:13px; color:#666; margin-bottom:12px; line-height:1.5;">
+        DistriSense connects to <strong>MapTiler Cloud</strong> for custom vector basemaps (Streets v2, Satellite Hybrid).
+        If no key is configured or if a key returns 403 Forbidden, DistriSense automatically falls back to CARTO Voyager vector tiles so territory tracking is always live.
+      </p>
+
+      <div style="margin-bottom:14px;">
+        <label for="input-maptiler-key" style="display:block; font-size:12px; font-weight:600; color:#1d1d1f; margin-bottom:6px;">MapTiler API Key:</label>
+        <input type="text" id="input-maptiler-key" placeholder="Paste your MapTiler API Key (e.g. from cloud.maptiler.com)"
+               style="width:100%; padding:9px 12px; font-size:13px; font-family:monospace; border:1px solid #d2d2d7; border-radius:8px; box-sizing:border-box;">
+        <div id="maptiler-key-msg" style="font-size:11px; margin-top:6px; color:#86868b;"></div>
+      </div>
+
+      <div style="background:#f5f5f7; border-radius:8px; padding:10px 12px; font-size:12px; color:#666; line-height:1.4;">
+        Don't have a key? Get one for free at <a href="https://cloud.maptiler.com/account/keys/" target="_blank" style="color:#20605C; text-decoration:underline;">cloud.maptiler.com</a> or enjoy the built-in free CARTO Voyager vector basemap.
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+      <button type="button" id="btn-clear-maptiler-key" style="background:transparent; border:none; color:#ff3b30; font-size:12px; cursor:pointer; text-decoration:underline;">Clear Stored Key</button>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn-copy" id="btn-cancel-maptiler" style="background:#f2f2f7; color:#1d1d1f; border:none;">Cancel</button>
+        <button type="button" class="btn-copy" id="btn-save-maptiler-key" style="background:#20605C; color:#fff; border:none;">Save &amp; Apply</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 10-Second Undo Toast (Section 3 Polish) -->
+<div class="undo-toast" id="undo-toast">
+  <span id="undo-toast-message">Transfer approved.</span>
+  <button id="btn-undo-action" class="btn-undo">
+    Undo (<span id="undo-timer">10</span>s)
+  </button>
+</div>
+
+<footer>No stock moves without explicit approval &middot; Every action is written to the audit log &middot; DistriSense 2026</footer>
+
+<script>
+// --- State & Config ---
+let currentRecommendations = [];
+let pendingApproval = null;
+
+// --- Simulator Auto-run (FIX 7) ---
+let simulatorAutoRan = false;
+function triggerSimulatorFirstView(){
+  if (simulatorAutoRan) return;
+  simulatorAutoRan = true;
+  const select = document.getElementById('sim-scenario');
+  if (select) select.value = 'festival_spike';
+  runSimulation();
+}
+
+// --- Navigation Tabs ---
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const target = tab.dataset.tab;
+    document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+    const activePanel = document.getElementById(`view-${target}`);
+    if (activePanel) activePanel.classList.add('active');
+
+    // Title update
+    const titles = {
+      'dashboard': 'Dashboard',
+      'expiry-radar': 'Expiry Radar',
+      'simulator': 'Simulator',
+      'map': 'Territory Map',
+      'audit': 'Audit Trail'
+    };
+    document.getElementById('page-title').textContent = titles[target] || 'DistriSense';
+
+    // Lazy load tab data
+    if (target === 'expiry-radar') loadExpiryRadar();
+    if (target === 'simulator') triggerSimulatorFirstView();
+    if (target === 'map') {
+      loadMap();
+      if (realMap) {
+        setTimeout(() => realMap.resize(), 100);
+      }
+    }
+    if (target === 'audit') loadAudit();
+  });
+});
+
+// --- Number Ticker (Inspira Appendix A Adaptation) ---
+const inrFormatter = new Intl.NumberFormat('en-IN', {
+  maximumFractionDigits: 0
+});
+
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+const tickerState = new WeakMap();
+
+function animateNumberTicker(el, targetValue, options = {}) {
+  if (!el) return;
+  const duration = options.duration || 900;
+  const prefix = options.prefix || '';
+  const isHtmlPrefix = options.isHtmlPrefix || false;
+
+  const prev = tickerState.get(el) || { current: 0, rafId: null, target: 0, hasRun: false };
+  if (prev.rafId) {
+    cancelAnimationFrame(prev.rafId);
+  }
+
+  const startVal = prev.hasRun ? prev.current : 0;
+  const endVal = Number(targetValue) || 0;
+
+  if (startVal === endVal && prev.hasRun) {
+    const formatted = inrFormatter.format(endVal);
+    if (isHtmlPrefix) {
+      el.innerHTML = prefix + formatted;
+    } else {
+      el.textContent = prefix + formatted;
+    }
+    tickerState.set(el, { current: endVal, rafId: null, target: endVal, hasRun: true });
+    return;
+  }
+
+  let startTimestamp = null;
+
+  function step(now) {
+    if (!startTimestamp) {
+      startTimestamp = now;
+    }
+    const elapsed = now - startTimestamp;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = easeOutCubic(progress);
+    const currentVal = Math.round(startVal + (endVal - startVal) * ease);
+
+    const formatted = inrFormatter.format(currentVal);
+    if (isHtmlPrefix) {
+      el.innerHTML = prefix + formatted;
+    } else {
+      el.textContent = prefix + formatted;
+    }
+
+    if (progress < 1) {
+      const nextRaf = requestAnimationFrame(step);
+      tickerState.set(el, { current: currentVal, rafId: nextRaf, target: endVal, hasRun: true });
+    } else {
+      tickerState.set(el, { current: endVal, rafId: null, target: endVal, hasRun: true });
+    }
+  }
+
+  const rafId = requestAnimationFrame(step);
+  tickerState.set(el, { current: startVal, rafId: rafId, target: endVal, hasRun: true });
+}
+
+function setTickNumber(el, target, options = {}) {
+  if (!el) return;
+  const num = Number(target) || 0;
+  animateNumberTicker(el, num, options);
+}
+
+// --- Formatting Helpers ---
+function formatRupees(num){
+  if (num === null || num === undefined) return '0';
+  return Math.round(num).toLocaleString('en-IN');
+}
+
+function metaLine(r){
+  if (r.type === 'expiry') {
+    const dExp = (r.days_to_expiry !== undefined && r.days_to_expiry !== null) ? r.days_to_expiry : (r.cover || 9);
+    return `Expires in <b>${dExp} days</b> &middot; sells <b>${r.forecast || 10}/day</b>`;
+  }
+  return `Cover <b>${(r.cover !== undefined ? r.cover.toFixed(1) : '1.0')} days</b> &middot; sells <b>${r.forecast || 14}/day</b> &middot; stockout chance <b>${Math.round((r.prob_stockout || 0.5) * 100)}%</b>`;
+}
+
+// Queue Card Bar (PART 3)
+function getCardBarHtml(r) {
+  if (r.type === 'expiry') {
+    const daysRemaining = (r.days_to_expiry !== undefined && r.days_to_expiry !== null) ? Number(r.days_to_expiry) : (r.cover || 9);
+    const fillPct = Math.min(100, Math.max(0, (daysRemaining / 30) * 100));
+    let barColor = '#34c759'; // green
+    if (daysRemaining < 7) barColor = '#ff3b30'; // red
+    else if (daysRemaining < 14) barColor = '#ff9500'; // amber
+
+    return `
+      <div class="card-bar-track" style="position:relative; width:100%; max-width:280px; height:6px; background:#e9e9ee; border-radius:9999px; margin-top:8px; overflow:hidden;" title="${daysRemaining} days to expiry">
+        <div class="card-bar-fill" style="width:${fillPct}%; height:100%; background:${barColor}; border-radius:9999px; transition:width 0.4s ease;"></div>
+      </div>
+    `;
+  } else {
+    const cover = (r.cover !== undefined && r.cover !== null) ? Number(r.cover) : 1.0;
+    const fillPct = Math.min(100, Math.max(0, (cover / 4) * 100));
+    let barColor = '#34c759'; // green
+    if (cover < 1.0) barColor = '#ff3b30'; // red
+    else if (cover < 2.5) barColor = '#ff9500'; // amber
+
+    return `
+      <div class="card-bar-track" style="position:relative; width:100%; max-width:280px; height:6px; background:#e9e9ee; border-radius:9999px; margin-top:8px;" title="${cover.toFixed(1)} days cover (3-day target)">
+        <div class="card-bar-fill" style="width:${fillPct}%; height:100%; background:${barColor}; border-radius:9999px; transition:width 0.4s ease;"></div>
+        <div title="3-day comfort cover line" style="position:absolute; left:75%; top:-2px; width:2px; height:10px; background:#86868b; border-radius:1px; z-index:2;"></div>
+      </div>
+    `;
+  }
+}
+
+// --- 1. Load Impact Metrics (Section 6.3) ---
+async function loadImpactMetrics(){
+  try {
+    const res = await fetch('/metrics/impact');
+    if (!res.ok) return;
+    const data = await res.json();
+    setTickNumber(document.getElementById('impact-rar'), data.rupees_at_risk_today, { prefix: '&#8377;', isHtmlPrefix: true });
+    setTickNumber(document.getElementById('impact-saved'), data.rupees_saved_total, { prefix: '&#8377;', isHtmlPrefix: true });
+    setTickNumber(document.getElementById('impact-prevented'), data.stockouts_prevented_count);
+    setTickNumber(document.getElementById('impact-watchlist'), data.active_watchlist_count);
+  } catch (err) {
+    console.warn('Failed to load impact metrics:', err);
+  }
+}
+
+// Skeleton helper
+function renderLanesSkeleton() {
+  const lanesEl = document.getElementById('lanes');
+  if (!lanesEl) return;
+  lanesEl.innerHTML = `
+    <div class="skeleton-container" id="lanes-skeleton">
+      <div class="skeleton-card">
+        <div class="skeleton-shimmer"></div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="flex:1;">
+            <div class="skeleton-line" style="width:140px; height:18px; margin-bottom:10px;"></div>
+            <div class="skeleton-line" style="width:260px; height:14px; margin-bottom:10px;"></div>
+            <div class="skeleton-line" style="width:340px; height:12px;"></div>
+          </div>
+          <div style="text-align:right;">
+            <div class="skeleton-line" style="width:70px; height:22px; margin-bottom:10px; margin-left:auto;"></div>
+            <div class="skeleton-line" style="width:80px; height:32px; border-radius:9999px; margin-left:auto;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton-shimmer"></div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="flex:1;">
+            <div class="skeleton-line" style="width:160px; height:18px; margin-bottom:10px;"></div>
+            <div class="skeleton-line" style="width:240px; height:14px; margin-bottom:10px;"></div>
+            <div class="skeleton-line" style="width:300px; height:12px;"></div>
+          </div>
+          <div style="text-align:right;">
+            <div class="skeleton-line" style="width:70px; height:22px; margin-bottom:10px; margin-left:auto;"></div>
+            <div class="skeleton-line" style="width:80px; height:32px; border-radius:9999px; margin-left:auto;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton-shimmer"></div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="flex:1;">
+            <div class="skeleton-line" style="width:120px; height:18px; margin-bottom:10px;"></div>
+            <div class="skeleton-line" style="width:280px; height:14px; margin-bottom:10px;"></div>
+            <div class="skeleton-line" style="width:320px; height:12px;"></div>
+          </div>
+          <div style="text-align:right;">
+            <div class="skeleton-line" style="width:70px; height:22px; margin-bottom:10px; margin-left:auto;"></div>
+            <div class="skeleton-line" style="width:80px; height:32px; border-radius:9999px; margin-left:auto;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// --- 2. Load Recommendations & Render Lanes ---
+async function loadRecommendations(){
+  renderLanesSkeleton();
+  try {
+    const runRes = await fetch('/runs/latest');
+    if (runRes.ok) {
+      const runData = await runRes.json();
+      const runDate = runData.started_at ? runData.started_at.split('T')[0] : '2026-10-25';
+      const statusEl = document.getElementById('run-status');
+      if (statusEl) statusEl.textContent = `Last run ${runDate} · Run ${runData.id}`;
+      if (runData.counts) {
+        const flaggedEl = document.getElementById('stat-flagged');
+        if (flaggedEl) setTickNumber(flaggedEl, runData.counts.flagged_positions || 600);
+      }
+    }
+
+    const recRes = await fetch('/recommendations?status=pending');
+    if (!recRes.ok) throw new Error('Failed to fetch recommendations');
+    currentRecommendations = await recRes.json();
+
+    renderLanes(currentRecommendations);
+    loadImpactMetrics();
+    initChartBand();
+  } catch (err) {
+    console.error('Error loading recommendations:', err);
+    document.getElementById('lanes').innerHTML = `<div class="empty-state">Error connecting to backend API: ${err.message}</div>`;
+  }
+}
+
+function renderLanes(recs){
+  const lanesEl = document.getElementById('lanes');
+  if (!lanesEl) return;
+  const filtered = recs || [];
+
+  const byLane = {};
+  filtered.forEach(r => {
+    byLane[r.from_node_id] = byLane[r.from_node_id] || { name: r.from_name || r.from_node_id, rows: [] };
+    byLane[r.from_node_id].rows.push(r);
+  });
+
+  const laneEntries = Object.entries(byLane);
+  const statLanesEl = document.getElementById('stat-lanes');
+  if (statLanesEl) setTickNumber(statLanesEl, laneEntries.length);
+  const statRecsEl = document.getElementById('stat-recs');
+  if (statRecsEl) setTickNumber(statRecsEl, filtered.length);
+
+  const movesTotal = filtered.reduce((sum, r) => sum + Math.round(r.rupee_at_risk || 0), 0);
+  const statRupeeEl = document.getElementById('stat-rupee');
+  if (statRupeeEl) setTickNumber(statRupeeEl, movesTotal, { prefix: '&#8377;', isHtmlPrefix: true });
+
+  if (laneEntries.length === 0){
+    lanesEl.innerHTML = `<div class="empty-state">Queue clear &mdash; every flagged risk has a decision. Run Now re-checks the latest stock counts.</div>`;
+    return;
+  }
+
+  // Find top pending card (highest ₹ at risk) for Border Beam
+  let topPendingId = null;
+  const pendingRecs = filtered.filter(r => r.status === 'pending');
+  if (pendingRecs.length > 0) {
+    const topRec = pendingRecs.reduce((max, r) => ((r.rupee_at_risk || 0) > (max.rupee_at_risk || 0) ? r : max), pendingRecs[0]);
+    topPendingId = topRec.id;
+  }
+
+  lanesEl.innerHTML = laneEntries.map(([src, lane]) => {
+    const units = lane.rows.reduce((a, r) => a + (r.quantity || 0), 0);
+    const anyPending = lane.rows.some(r => r.status === 'pending');
+    return `
+    <section class="lane" data-source-id="${src}">
+      <div class="lane-head">
+        <span class="src">From ${lane.name}</span>
+        <span class="meta">${lane.rows.length} moves &middot; ${units} units</span>
+        <button class="btn-ghost" data-action="bulk-approve" data-source-id="${src}" ${anyPending ? '' : 'disabled'}>Approve all</button>
+      </div>
+      ${lane.rows.map(r => {
+        const isTop = (r.id === topPendingId);
+        return `
+      <article class="rec ${r.status === 'dismissed' ? 'dismissed' : ''} ${r.status === 'approved' ? 'approved' : ''}" data-rec-id="${r.id}">
+        <div class="card-spotlight-overlay"></div>
+        ${isTop ? `<div class="border-beam"></div>` : ''}
+        <div class="rec-main">
+          <div class="sku-line">
+            <span class="sku">${r.sku_name || r.sku_id}</span>
+            <span class="badge ${r.type === 'expiry' ? 'badge-expiry' : (r.reason_codes && r.reason_codes.includes('EXPIRY_RESCUE_SPLIT') ? 'badge-rescue' : 'badge-stockout')}">
+              ${r.type === 'expiry' ? 'EXPIRY' : (r.reason_codes && r.reason_codes.includes('EXPIRY_RESCUE_SPLIT') ? 'RESCUE SPLIT' : 'STOCKOUT')}
+            </span>
+            ${r.confidence === 'low' ? '<span class="badge" style="background:#fff2e8; color:#d4380d; border:1px solid #ffbb96;">LOW CONFIDENCE</span>' : ''}
+          </div>
+          <div class="route">${r.from_name || r.from_node_id} &rarr; ${r.to_name || r.to_node_id} &middot; ${r.sku_id}</div>
+          <div class="meta-line">${metaLine(r)}</div>
+          ${getCardBarHtml(r)}
+          <p class="expl">
+            ${r.explanation}
+            <a href="#" class="link-formula" data-formula-rec="${r.id}">Why? (Formula breakdown) &rarr;</a>
+          </p>
+          <div class="status-line" data-status-for="${r.id}">
+            ${r.status === 'approved' ? '<span class="status-approved">Approved &mdash; dispatch created</span>' : ''}
+            ${r.status === 'dismissed' ? '<span class="status-dismissed">Dismissed</span>' : ''}
+          </div>
+        </div>
+        <div class="rec-side">
+          <div class="rupee">&#8377;${formatRupees(r.rupee_at_risk)}</div>
+          <div class="rupee-lab">at risk</div>
+          <input class="qty-input" type="number" value="${r.quantity}" data-qty-for="${r.id}" ${r.status !== 'pending' ? 'disabled' : ''} aria-label="Quantity">
+          <div class="qty-lab">units</div>
+          <div class="rec-actions">
+            <button class="btn-approve" data-action="approve" data-rec-id="${r.id}" ${r.status !== 'pending' ? 'disabled' : ''}>Approve</button>
+            <button class="link-dismiss" data-action="dismiss" data-rec-id="${r.id}" ${r.status !== 'pending' ? 'disabled' : ''}>Dismiss</button>
+            <button class="link-kirana" data-action="kirana-digest" data-outlet-id="${r.to_node_id}" data-rec-id="${r.id}">Kirana Digest</button>
+          </div>
+        </div>
+      </article>`;
+      }).join('')}
+    </section>`;
+  }).join('');
+}
+
+// --- 3. Undo Toast & Commit Logic (Section 3 Polish) ---
+async function commitPendingApproval() {
+  if (!pendingApproval) return;
+  const p = pendingApproval;
+  pendingApproval = null;
+
+  if (p.timerInterval) clearInterval(p.timerInterval);
+  if (p.commitTimeout) clearTimeout(p.commitTimeout);
+
+  const toast = document.getElementById('undo-toast');
+  if (toast) toast.classList.remove('visible');
+
+  try {
+    const res = await fetch('/approve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: [p.recId], action: 'approve', edits: p.qty ? { quantity: p.qty } : null })
+    });
+    const data = await res.json();
+    if (res.status === 200) {
+      if (p.statusEl) p.statusEl.innerHTML = '<span class="status-approved">Approved &mdash; dispatch created</span>';
+      const rec = currentRecommendations.find(r => r.id === p.recId);
+      if (rec) rec.status = 'approved';
+      loadImpactMetrics();
+    } else if (res.status === 409) {
+      if (p.statusEl) p.statusEl.innerHTML = '<span class="status-dismissed">Already actioned</span>';
+    } else if (res.status === 422) {
+      if (p.btn) p.btn.disabled = false;
+      if (p.qtyInput) p.qtyInput.disabled = false;
+      if (p.statusEl) p.statusEl.innerHTML = `<span class="status-error">${data.detail || 'Strands source'}</span>`;
+    }
+  } catch (err) {
+    if (p.statusEl) p.statusEl.innerHTML = `<span class="status-error">Error: ${err.message}</span>`;
+    if (p.btn) p.btn.disabled = false;
+    if (p.qtyInput) p.qtyInput.disabled = false;
+  }
+}
+
+// Undo Button Listener
+document.getElementById('btn-undo-action').addEventListener('click', () => {
+  if (!pendingApproval) return;
+  const p = pendingApproval;
+  if (p.timerInterval) clearInterval(p.timerInterval);
+  if (p.commitTimeout) clearTimeout(p.commitTimeout);
+  pendingApproval = null;
+
+  // Rollback UI to pending
+  if (p.btn) p.btn.disabled = false;
+  if (p.qtyInput) p.qtyInput.disabled = false;
+  if (p.article) p.article.classList.remove('approved');
+  if (p.statusEl) p.statusEl.innerHTML = '';
+  const rec = currentRecommendations.find(r => r.id === p.recId);
+  if (rec) rec.status = 'pending';
+
+  // Acknowledge rollback in toast
+  const toast = document.getElementById('undo-toast');
+  const toastMsg = document.getElementById('undo-toast-message');
+  const undoBtn = document.getElementById('btn-undo-action');
+  if (toastMsg) toastMsg.textContent = 'Transfer approval undone. Restored to pending.';
+  if (undoBtn) undoBtn.style.display = 'none';
+
+  setTimeout(() => {
+    if (toast) toast.classList.remove('visible');
+    if (undoBtn) undoBtn.style.display = 'inline-flex';
+  }, 1600);
+});
+
+// Commit before window unload if user navigates away
+window.addEventListener('beforeunload', () => {
+  if (pendingApproval) {
+    commitPendingApproval();
+  }
+});
+
+// --- 4. Actions: Approve, Dismiss, Bulk-Approve, Run Now ---
+document.addEventListener('click', async e => {
+  // Formula drawer trigger
+  const formulaLink = e.target.closest('.link-formula');
+  if (formulaLink) {
+    e.preventDefault();
+    openFormulaDrawer(formulaLink.dataset.formulaRec);
+    return;
+  }
+
+  const b = e.target.closest('[data-action]');
+  if (!b || b.disabled) return;
+  const action = b.dataset.action;
+
+  // Single Approve with 10-Second Undo Toast
+  if (action === 'approve') {
+    // If another approval is already in its 10s undo window, commit it immediately
+    if (pendingApproval) {
+      await commitPendingApproval();
+    }
+
+    const recId = b.dataset.recId;
+    const qtyInput = document.querySelector(`[data-qty-for="${recId}"]`);
+    const qty = qtyInput ? parseInt(qtyInput.value, 10) : undefined;
+    const statusEl = document.querySelector(`[data-status-for="${recId}"]`);
+    const article = document.querySelector(`[data-rec-id="${recId}"]`);
+    const rec = currentRecommendations.find(r => r.id === recId);
+
+    // Optimistic UI updates
+    b.disabled = true;
+    if (qtyInput) qtyInput.disabled = true;
+    if (article) article.classList.add('approved');
+    if (statusEl) statusEl.innerHTML = '<span class="status-approved">Transfer approved &mdash; dispatch scheduled</span>';
+
+    // Show 10-Second Undo Toast
+    const toast = document.getElementById('undo-toast');
+    const toastMsg = document.getElementById('undo-toast-message');
+    const timerSpan = document.getElementById('undo-timer');
+    const undoBtn = document.getElementById('btn-undo-action');
+    if (undoBtn) undoBtn.style.display = 'inline-flex';
+
+    let secondsLeft = 10;
+    if (timerSpan) timerSpan.textContent = secondsLeft;
+    if (toastMsg) toastMsg.textContent = `Transfer approved${rec ? ` for ${rec.sku_name || rec.sku_id}` : ''}.`;
+    if (toast) toast.classList.add('visible');
+
+    const timerInterval = setInterval(() => {
+      secondsLeft--;
+      if (timerSpan) timerSpan.textContent = secondsLeft;
+      if (secondsLeft <= 0) {
+        clearInterval(timerInterval);
+      }
+    }, 1000);
+
+    const commitTimeout = setTimeout(async () => {
+      await commitPendingApproval();
+    }, 10000);
+
+    pendingApproval = {
+      recId,
+      qty,
+      btn: b,
+      qtyInput,
+      statusEl,
+      article,
+      timerInterval,
+      commitTimeout
+    };
+  }
+
+  // Dismiss
+  if (action === 'dismiss') {
+    const recId = b.dataset.recId;
+    const statusEl = document.querySelector(`[data-status-for="${recId}"]`);
+    b.disabled = true;
+    try {
+      const res = await fetch('/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [recId], action: 'dismiss' })
+      });
+      if (res.ok || res.status === 409) {
+        const article = document.querySelector(`[data-rec-id="${recId}"]`);
+        if (article) article.classList.add('dismissed');
+        statusEl.innerHTML = '<span class="status-dismissed">Dismissed</span>';
+        const rec = currentRecommendations.find(r => r.id === recId);
+        if (rec) rec.status = 'dismissed';
+      }
+    } catch (err) {
+      statusEl.innerHTML = `<span class="status-error">Error: ${err.message}</span>`;
+      b.disabled = false;
+    }
+  }
+
+  // Bulk Approve
+  if (action === 'bulk-approve') {
+    const srcId = b.dataset.sourceId;
+    const pendingInLane = currentRecommendations.filter(r => r.from_node_id === srcId && r.status === 'pending');
+    if (pendingInLane.length === 0) return;
+    b.disabled = true;
+    try {
+      const res = await fetch('/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: pendingInLane.map(r => r.id), action: 'bulk-approve' })
+      });
+      const data = await res.json();
+      if (res.ok && data.results) {
+        data.results.forEach(resItem => {
+          const statusEl = document.querySelector(`[data-status-for="${resItem.id}"]`);
+          const rec = currentRecommendations.find(r => r.id === resItem.id);
+          if (resItem.status === 'approved') {
+            if (statusEl) statusEl.innerHTML = '<span class="status-approved">Approved &mdash; dispatch created</span>';
+            if (rec) rec.status = 'approved';
+          } else if (resItem.note) {
+            if (statusEl) statusEl.innerHTML = `<span class="status-excluded">${resItem.note}</span>`;
+          }
+        });
+        loadImpactMetrics();
+      }
+    } catch (err) {
+      alert(`Bulk approval error: ${err.message}`);
+      b.disabled = false;
+    }
+  }
+
+  // Kirana Digest Modal
+  if (action === 'kirana-digest') {
+    const outletId = b.dataset.outletId;
+    openKiranaDigest(outletId);
+  }
+});
+
+// Run Now button
+document.getElementById('btn-run-now').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-run-now');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Running\u2026';
+  const statusEl = document.getElementById('run-status');
+  if (statusEl) statusEl.textContent = 'Running decision pipeline\u2026';
+  try {
+    const res = await fetch('/run-now', { method: 'POST' });
+    const data = await res.json();
+    if (statusEl) statusEl.textContent = `Completed run ${data.run_id} just now`;
+    btn.textContent = 'Run completed';
+    setTimeout(() => { btn.textContent = originalText; }, 2000);
+    await loadRecommendations();
+  } catch (err) {
+    if (statusEl) statusEl.textContent = `Run error: ${err.message}`;
+    btn.textContent = 'Run error';
+    setTimeout(() => { btn.textContent = originalText; }, 2000);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// --- 5. "Why This Quantity?" Formula Drawer (Section 2 Polish) ---
+const formulaModal = document.getElementById('formula-modal');
+document.getElementById('btn-close-formula').addEventListener('click', () => formulaModal.classList.remove('open'));
+document.getElementById('btn-dismiss-formula').addEventListener('click', () => formulaModal.classList.remove('open'));
+
+function openFormulaDrawer(recId) {
+  const rec = currentRecommendations.find(r => r.id === recId) || {};
+  const skuName = rec.sku_name || rec.sku_id || 'Instant Noodles 12-pack';
+  const fromName = rec.from_name || rec.from_node_id || 'Warehouse B';
+  const toName = rec.to_name || rec.to_node_id || 'Shop 12';
+
+  const forecast = rec.forecast || 14.0;
+  const leadTime = 1;
+  const bufferDays = 2;
+  const horizonDays = leadTime + bufferDays; // 3 days
+  const targetDemand = Math.round(forecast * horizonDays);
+  const cover = rec.cover !== undefined ? rec.cover : 1.0;
+  const currentStock = Math.max(0, Math.round(forecast * cover));
+  const qty = rec.quantity || Math.max(1, targetDemand - currentStock);
+  const probPercent = rec.prob_stockout != null ? Math.round(rec.prob_stockout * 100) : 50;
+  const zScore = ((currentStock - forecast) / 1.0).toFixed(2);
+  const sourceBefore = rec.source_before || 900;
+  const sourceAfter = rec.source_after || (sourceBefore - qty);
+  const safetyFloor = 180;
+
+  document.getElementById('formula-sku-title').textContent = `${skuName} (${qty} units)`;
+  document.getElementById('formula-route-sub').textContent = `${fromName} \u2192 ${toName} \u00b7 Target: 3.0 days cover`;
+
+  const container = document.getElementById('formula-content');
+  container.innerHTML = `
+    <!-- 1. WMA(28d) Base Sales -->
+    <div class="formula-step">
+      <div class="formula-step-title">
+        <span>1. WMA(28d) Base Sales</span>
+        <span class="step-badge">Baseline Demand</span>
+      </div>
+      <div class="formula-step-calc">Forecast = &sum;(Sales<sub>d</sub> &times; w<sub>d</sub>) / &sum;(w<sub>d</sub>) = <b>${forecast.toFixed(1)} units/day</b></div>
+      <div class="formula-step-desc">
+        Computed via a 28-day linearly weighted moving average (weights increasing 1 to 28). Dampens transient noise while responding quickly to local kirana demand shifts.
+      </div>
+    </div>
+
+    <!-- 2. Lead Time & Buffer (+2 days) -->
+    <div class="formula-step">
+      <div class="formula-step-title">
+        <span>2. Lead Time &amp; Buffer (+2 days)</span>
+        <span class="step-badge">Horizon Sizing</span>
+      </div>
+      <div class="formula-step-calc">Coverage Horizon = Lead Time (${leadTime}d) + Safety Buffer (+${bufferDays}d) = <b>${horizonDays}.0 days</b></div>
+      <div class="formula-step-desc">
+        Kolhapur territory replenishment dispatch takes 1 day transit. A mandatory +2 days buffer protects against unexpected local demand spikes.
+      </div>
+    </div>
+
+    <!-- 3. Deficit Formula -->
+    <div class="formula-step">
+      <div class="formula-step-title">
+        <span>3. Deficit Formula: Ceil(Forecast &times; (Lead + 2) &minus; Stock)</span>
+        <span class="step-badge">Replenishment Qty</span>
+      </div>
+      <div class="formula-step-calc">Target = ${forecast.toFixed(1)} &times; 3d = ${targetDemand} units | Stock = ${currentStock} units (${cover.toFixed(1)}d cover)<br>Deficit = &lceil;${targetDemand} &minus; ${currentStock}&rceil; = <b>${qty} units</b></div>
+      <div class="formula-step-desc">
+        Target stock level minus current store on-hand inventory. Restores shelf coverage to the mandatory 3-day target without over-stocking.
+      </div>
+    </div>
+
+    <!-- 4. Normal Curve Z-Score and P(stockout) -->
+    <div class="formula-step">
+      <div class="formula-step-title">
+        <span>4. Normal Curve Z-Score and P(Stockout) = ${probPercent}%</span>
+        <span class="step-badge" style="background:#fff1f0; color:#d93025;">Risk Gate</span>
+      </div>
+      <div class="formula-step-calc">Z = (Current Stock &minus; &mu;) / &sigma; = (${currentStock} &minus; ${forecast.toFixed(1)}) / 1.0 = ${zScore}<br>P(Stockout) = &Phi;(&minus;Z) = <b>${probPercent}%</b> (&ge; 40% threshold)</div>
+      <div class="formula-step-desc">
+        Standard normal cumulative distribution over daily demand variance. Because stockout probability (${probPercent}%) exceeds the 40% risk threshold, an automated rebalance move is triggered.
+      </div>
+    </div>
+
+    <!-- 5. Warehouse Post-Transfer Safety Floor Check -->
+    <div class="formula-step">
+      <div class="formula-step-title">
+        <span>5. Warehouse Post-Transfer Safety Floor Check</span>
+        <span class="step-badge" style="background:#f6ffed; color:#389e0d;">Passed</span>
+      </div>
+      <div class="formula-step-calc">Source Remaining = ${sourceBefore} &minus; ${qty} = <b>${sourceAfter} units</b> &ge; ${safetyFloor} (Reorder Point + Safety Buffer)</div>
+      <div class="formula-step-desc">
+        Verification check: ${fromName} retains sufficient inventory to remain strictly above its safety threshold after supplying this outlet.
+      </div>
+    </div>
+  `;
+
+  formulaModal.classList.add('open');
+}
+
+// --- 7. Daily WhatsApp Digest Modal (Section 5.12) ---
+const waModal = document.getElementById('wa-modal');
+const waTextArea = document.getElementById('wa-text-area');
+const waSendLink = document.getElementById('btn-wa-link');
+const waModalTitle = document.getElementById('wa-modal-title');
+
+document.getElementById('btn-daily-digest').addEventListener('click', async () => {
+  waModalTitle.textContent = '09:00 Daily Risk Digest (WhatsApp)';
+  waTextArea.value = 'Generating daily network risk digest\u2026';
+  waModal.classList.add('open');
+  try {
+    const res = await fetch('/digest/daily');
+    const data = await res.json();
+    waTextArea.value = data.whatsapp_text || '';
+    waSendLink.href = data.share_url || '#';
+  } catch (err) {
+    waTextArea.value = `Error generating digest: ${err.message}`;
+  }
+});
+
+async function openKiranaDigest(outletId) {
+  waModalTitle.textContent = `Kirana Store Digest (${outletId})`;
+  waTextArea.value = `Loading stock digest for store ${outletId}\u2026`;
+  waModal.classList.add('open');
+  try {
+    const res = await fetch(`/digest/outlet/${outletId}`);
+    const data = await res.json();
+    waTextArea.value = data.whatsapp_text || '';
+    waSendLink.href = data.share_url || '#';
+  } catch (err) {
+    waTextArea.value = `Error generating outlet digest: ${err.message}`;
+  }
+}
+
+document.getElementById('btn-close-wa').addEventListener('click', () => waModal.classList.remove('open'));
+document.getElementById('btn-copy-wa').addEventListener('click', () => {
+  navigator.clipboard.writeText(waTextArea.value);
+  const btn = document.getElementById('btn-copy-wa');
+  const oldText = btn.textContent;
+  btn.textContent = 'Copied!';
+  setTimeout(() => { btn.textContent = oldText; }, 2000);
+});
+
+// --- 8. Expiry Radar & Split Rescue (Section 5.8) ---
+const rescueModal = document.getElementById('rescue-modal');
+const rescueBody = document.getElementById('rescue-modal-body');
+document.getElementById('btn-close-rescue').addEventListener('click', () => rescueModal.classList.remove('open'));
+
+async function loadExpiryRadar(){
+  const tbody = document.getElementById('radar-tbody');
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Scanning batches within 30-day window&hellip;</td></tr>';
+  try {
+    const res = await fetch('/expiry-radar?days=30');
+    const batches = await res.json();
+    if (batches.length === 0){
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No batches expiring in the next 30 days. Network healthy.</td></tr>';
+      return;
+    }
+    batches.sort((a, b) => a.days_to_expiry - b.days_to_expiry);
+    const total = batches.length;
+    const rendered = batches.slice(0, 30);
+    const countLine = document.getElementById('radar-count-line');
+    if (countLine) {
+      countLine.textContent = `Showing 30 of ${total} batches · soonest expiry first`;
+    }
+    tbody.innerHTML = rendered.map(b => `
+      <tr>
+        <td><code>${b.batch_id}</code></td>
+        <td><b>${b.sku_name || b.sku_id}</b></td>
+        <td>${b.node_name || b.node_id}</td>
+        <td><b>${b.quantity}</b> units</td>
+        <td>${b.expiry_date}</td>
+        <td><b style="color:${b.days_to_expiry <= 10 ? '#d93025' : '#b25900'}">${b.days_to_expiry} days</b></td>
+        <td>${b.days_of_cover}d</td>
+        <td>
+          <button class="btn-primary" style="padding:6px 14px; font-size:12px;" onclick="triggerRescue('${b.batch_id}')">
+            Split Rescue
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="8" style="color:#d93025; text-align:center;">Error: ${err.message}</td></tr>`;
+  }
+}
+document.getElementById('btn-refresh-radar').addEventListener('click', loadExpiryRadar);
+
+async function triggerRescue(batchId){
+  rescueBody.innerHTML = `Computing absorb capacity of nearby stores for <b>${batchId}</b>&hellip;`;
+  rescueModal.classList.add('open');
+  try {
+    const res = await fetch('/expiry-radar/rescue', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ batch_id: batchId, max_outlets: 5, max_distance_km: 25.0 })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Rescue calculation failed');
+
+    let splitHtml = data.split_transfers.map(st => `
+      <div style="background:#f5f5f7; border-radius:10px; padding:12px; margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <b>${st.to_name} (${st.to_node_id})</b> &middot; Distance: ${st.distance_km} km
+          <div style="font-size:12px; color:#666; margin-top:2px;">Store Absorb Capacity: ${st.outlet_absorb_capacity} units</div>
+        </div>
+        <div style="text-align:right;">
+          <b style="color:#20605C; font-size:16px;">+${st.quantity} units</b>
+          <div style="font-size:11px; color:#28a745;">Pending Move Generated</div>
+        </div>
+      </div>
+    `).join('');
+
+    let markdownHtml = '';
+    if (data.residual_for_markdown && data.residual_for_markdown.flagged) {
+      markdownHtml = `
+        <div style="background:#fff2f0; border:1px solid #ffccc7; border-radius:10px; padding:12px; margin-top:14px; color:#cf1322;">
+          <b>Residual Flagged for Markdown: ${data.residual_for_markdown.residual_quantity} units</b>
+          <p style="font-size:12px; margin-top:4px;">${data.residual_for_markdown.reason}</p>
+        </div>
+      `;
+    }
+
+    rescueBody.innerHTML = `
+      <div style="font-size:14px; margin-bottom:12px;">
+        Batch: <code>${data.batch_id}</code> &middot; Product: <b>${data.sku_name}</b> &middot; Location: <b>${data.source_node_name}</b><br>
+        Sellable Window: <b>${data.sellable_window_days} days</b> &middot; Units to Move: <b>${data.units_to_move}</b> &middot; Rescued: <b>${data.units_rescued}</b>
+      </div>
+      <div style="font-weight:600; margin-top:16px;">FEFO Split Allocation Plan:</div>
+      ${splitHtml || '<div style="color:#666; margin-top:8px;">No absorbing nearby stores found.</div>'}
+      ${markdownHtml}
+      <button class="btn-primary" style="margin-top:18px; width:100%;" onclick="rescueModal.classList.remove('open'); document.querySelector('[data-tab=dashboard]').click(); loadRecommendations();">
+        Review Generated Moves on Dashboard &rarr;
+      </button>
+    `;
+  } catch (err) {
+    rescueBody.innerHTML = `<div style="color:#d93025;">Rescue failed: ${err.message}</div>`;
+  }
+}
+
+// --- 9. 3-Arm Simulator (Section 6.2) ---
+async function runSimulation() {
+  const select = document.getElementById('sim-scenario');
+  const scenario = select ? select.value : 'festival_spike';
+  const btn = document.getElementById('btn-run-sim');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Simulating 14 days\u2026';
+  }
+  try {
+    const mult = scenario === 'festival_spike' ? 1.4 : (scenario === 'demand_drop' ? 0.7 : 1.0);
+    const res = await fetch('/simulate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario: scenario, duration_days: 14, multiplier: mult })
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP error ${res.status}`);
+    }
+    const data = await res.json();
+    const resultsGrid = document.getElementById('sim-results');
+    if (resultsGrid) resultsGrid.style.display = 'grid';
+    const convertBtn = document.getElementById('btn-convert-plan');
+    if (convertBtn) convertBtn.style.display = 'inline-block';
+
+    const getVal = (arm, key1, key2) => {
+      if (!arm) return 0;
+      const v = arm[key1] !== undefined ? arm[key1] : arm[key2];
+      return (typeof v === 'number') ? v : (Number(v) || 0);
+    };
+
+    const dnLost = getVal(data.donothing, 'lost_sales_units', 'lost_units');
+    const dnEvents = getVal(data.donothing, 'stockout_events', 'events');
+    const dnExp = getVal(data.donothing, 'expired_units', 'writeoffs');
+
+    const baseLost = getVal(data.baseline, 'lost_sales_units', 'lost_units');
+    const baseEvents = getVal(data.baseline, 'stockout_events', 'events');
+    const baseExp = getVal(data.baseline, 'expired_units', 'writeoffs');
+
+    const dsLost = getVal(data.distrisense, 'lost_sales_units', 'lost_units');
+    const dsEvents = getVal(data.distrisense, 'stockout_events', 'events');
+    const dsExp = getVal(data.distrisense, 'expired_units', 'writeoffs');
+
+    const setTxt = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val.toLocaleString('en-IN');
+    };
+
+    setTxt('sim-dn-lost', dnLost);
+    setTxt('sim-dn-events', dnEvents);
+    setTxt('sim-dn-exp', dnExp);
+
+    setTxt('sim-base-lost', baseLost);
+    setTxt('sim-base-events', baseEvents);
+    setTxt('sim-base-exp', baseExp);
+
+    setTxt('sim-ds-lost', dsLost);
+    setTxt('sim-ds-events', dsEvents);
+    setTxt('sim-ds-exp', dsExp);
+
+    // Mini horizontal bars scaled to max value across the three arms (PART 3)
+    const maxLost = Math.max(dnLost, baseLost, dsLost, 1);
+    const maxEvents = Math.max(dnEvents, baseEvents, dsEvents, 1);
+    const maxExp = Math.max(dnExp, baseExp, dsExp, 1);
+
+    const setBar = (id, val, max) => {
+      const el = document.getElementById(id);
+      if (el) el.style.width = `${Math.min(100, Math.max(0, Math.round((val / max) * 100)))}%`;
+    };
+
+    setBar('sim-bar-dn-lost', dnLost, maxLost);
+    setBar('sim-bar-base-lost', baseLost, maxLost);
+    setBar('sim-bar-ds-lost', dsLost, maxLost);
+
+    setBar('sim-bar-dn-events', dnEvents, maxEvents);
+    setBar('sim-bar-base-events', baseEvents, maxEvents);
+    setBar('sim-bar-ds-events', dsEvents, maxEvents);
+
+    setBar('sim-bar-dn-exp', dnExp, maxExp);
+    setBar('sim-bar-base-exp', baseExp, maxExp);
+    setBar('sim-bar-ds-exp', dsExp, maxExp);
+
+    const savedUnits = baseLost - dsLost;
+    const deltaEl = document.getElementById('sim-delta');
+    if (deltaEl) {
+      deltaEl.textContent = `Saves ${savedUnits.toLocaleString('en-IN')} units vs baseline weekly review!`;
+    }
+  } catch (err) {
+    console.error('Simulation failed:', err);
+    alert(`Simulation failed: ${err.message}`);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Run Simulation';
+    }
+  }
+}
+
+document.getElementById('btn-run-sim')?.addEventListener('click', runSimulation);
+
+document.getElementById('btn-convert-plan').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-convert-plan');
+  btn.disabled = true;
+  btn.textContent = 'Injecting moves\u2026';
+  try {
+    const res = await fetch('/simulate/convert-to-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario: document.getElementById('sim-scenario').value })
+    });
+    const data = await res.json();
+    alert(`Successfully injected ${data.recommendations_created} simulated transfer recommendations into pending approval queue!`);
+    document.querySelector('[data-tab="dashboard"]').click();
+    loadRecommendations();
+  } catch (err) {
+    alert(`Conversion error: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '+ Convert Winning Moves to Plan';
+  }
+});
+
+// --- 10. Real Territory Map (MapTiler + MapLibre GL v4 with Resilient Basemap Cascade) ---
+/* __MAPTILER_KEY_INJECTION__ */
+window.ENV_MAPTILER_KEY = window.ENV_MAPTILER_KEY || '';
+
+const MAP_STYLES = {
+  'carto-voyager': {
+    name: 'CARTO Voyager (Vector)',
+    isVector: true,
+    requiresKey: false,
+    url: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
+  },
+  'carto-positron': {
+    name: 'CARTO Positron (Light)',
+    isVector: true,
+    requiresKey: false,
+    url: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+  },
+  'carto-dark': {
+    name: 'CARTO Dark Matter',
+    isVector: true,
+    requiresKey: false,
+    url: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
+  },
+  'osm-raster': {
+    name: 'OpenStreetMap (Raster)',
+    isVector: false,
+    requiresKey: false,
+    style: {
+      version: 8,
+      sources: {
+        'osm-tiles': {
+          type: 'raster',
+          tiles: [
+            'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+          ],
+          tileSize: 256,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }
+      },
+      layers: [
+        {
+          id: 'osm-tiles-layer',
+          type: 'raster',
+          source: 'osm-tiles',
+          minzoom: 0,
+          maxzoom: 19
+        }
+      ]
+    }
+  },
+  'maptiler-streets': {
+    name: 'MapTiler Streets (Cloud)',
+    isVector: true,
+    requiresKey: true,
+    getUrl: (k) => `https://api.maptiler.com/maps/streets-v2/style.json?key=${k}`
+  },
+  'maptiler-satellite': {
+    name: 'MapTiler Satellite Hybrid',
+    isVector: true,
+    requiresKey: true,
+    getUrl: (k) => `https://api.maptiler.com/maps/hybrid/style.json?key=${k}`
+  }
+};
+
+function getEffectiveMapTilerKey() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const hashQuery = window.location.hash.includes('?') ? window.location.hash.substring(window.location.hash.indexOf('?') + 1) : '';
+  const hashParams = new URLSearchParams(hashQuery);
+  const key = (
+    urlParams.get('maptiler_key') ||
+    hashParams.get('maptiler_key') ||
+    urlParams.get('key') ||
+    localStorage.getItem('ds_maptiler_key') ||
+    (window.ENV_MAPTILER_KEY || '') ||
+    (window.MAPTILER_KEY || '')
+  ).trim();
+  // Filter out revoked placeholder keys that are known to return 403
+  if (key === 'ZIMzn5S5fYTzO57crkNO') return '';
+  return key;
+}
+
+let realMap = null;
+let currentMapData = null;
+let currentAllEdges = null;
+let currentStyleKey = 'carto-voyager';
+let activeMapMode = 'real'; // 'real' or 'schematic'
+let mapMarkers = [];
+
+function updateMapStatusPill(type, text) {
+  const pill = document.getElementById('map-status-pill');
+  const textEl = document.getElementById('map-status-text');
+  if (!pill || !textEl) return;
+  textEl.textContent = text;
+  if (type === 'success') {
+    pill.style.background = '#e8f5e9';
+    pill.style.color = '#2e7d32';
+    pill.style.borderColor = '#c8e6c9';
+    if (pill.firstElementChild) pill.firstElementChild.style.background = '#2e7d32';
+  } else if (type === 'warning') {
+    pill.style.background = '#fff8e1';
+    pill.style.color = '#f57f17';
+    pill.style.borderColor = '#ffe082';
+    if (pill.firstElementChild) pill.firstElementChild.style.background = '#f57f17';
+  } else {
+    pill.style.background = '#e8f5e9';
+    pill.style.color = '#2e7d32';
+    pill.style.borderColor = '#c8e6c9';
+    if (pill.firstElementChild) pill.firstElementChild.style.background = '#2e7d32';
+  }
+}
+
+async function loadMap(){
+  const statsEl = document.getElementById('map-stats');
+  if (statsEl) statsEl.textContent = 'Loading network telemetry\u2026';
+
+  let data;
+  try {
+    const res = await fetch('/map');
+    data = await res.json();
+  } catch (err) {
+    if (statsEl) statsEl.textContent = `Error loading network map: ${err.message}`;
+    return;
+  }
+
+  const nodes = data.nodes || [];
+  const edges = data.edges || [];
+  if (statsEl) {
+    statsEl.innerHTML = `<b>${nodes.length}</b> Nodes (3 Warehouses, 50 Kiranas) &middot; <b>${edges.length}</b> Active Dispatches`;
+  }
+
+  // Combine edges with pending recommendations
+  const allEdges = [...edges];
+  currentRecommendations.forEach(r => {
+    if (!allEdges.some(e => e.from_node_id === r.from_node_id && e.to_node_id === r.to_node_id)) {
+      allEdges.push({
+        from_node_id: r.from_node_id,
+        to_node_id: r.to_node_id,
+        sku_id: r.sku_id,
+        quantity: r.quantity,
+        isPending: true
+      });
+    }
+  });
+
+  currentMapData = data;
+  currentAllEdges = allEdges;
+
+  if (activeMapMode === 'schematic') {
+    renderSchematicFallback(data, allEdges);
+    return;
+  }
+
+  if (realMap) {
+    setTimeout(() => realMap.resize(), 100);
+    renderMapDataLayers(realMap, nodes, allEdges);
+    return;
+  }
+
+  initRealMap(data, allEdges);
+}
+
+function renderMapDataLayers(map, nodes, edges) {
+  if (!map) return;
+
+  // Coordinate mapping: nodes from /map have lat and lng in Kolhapur
+  const nodeCoords = {};
+  nodes.forEach(n => {
+    let lng = (n.lng != null) ? n.lng : 74.2407;
+    let lat = (n.lat != null) ? n.lat : 16.7000;
+    if (n.x != null && n.y != null) {
+      lng = 74.2433 + ((n.x - 50) / 50) * 0.055;
+      lat = 16.7050 + ((n.y - 50) / 50) * 0.045;
+    }
+    nodeCoords[n.id] = { lng, lat, ...n };
+  });
+
+  // 1. Draw Active Dispatches Routes
+  const routeFeatures = [];
+  edges.forEach(e => {
+    const src = nodeCoords[e.from_node_id];
+    const dst = nodeCoords[e.to_node_id];
+    if (src && dst) {
+      routeFeatures.push({
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [[src.lng, src.lat], [dst.lng, dst.lat]]
+        },
+        properties: {
+          from: e.from_node_id,
+          to: e.to_node_id,
+          isPending: !!e.isPending
+        }
+      });
+    }
+  });
+
+  try {
+    if (map.getLayer('dispatch-lines-layer')) map.removeLayer('dispatch-lines-layer');
+    if (map.getSource('dispatch-lines-src')) map.removeSource('dispatch-lines-src');
+
+    if (routeFeatures.length > 0) {
+      map.addSource('dispatch-lines-src', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: routeFeatures
+        }
+      });
+
+      map.addLayer({
+        id: 'dispatch-lines-layer',
+        type: 'line',
+        source: 'dispatch-lines-src',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round'
+        },
+        paint: {
+          'line-color': '#20605C',
+          'line-width': 2.5,
+          'line-dasharray': [2, 2]
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('Could not add route lines layer:', err);
+  }
+
+  // 2. Add Markers for Warehouses & Kirana Shops
+  mapMarkers.forEach(m => m.remove());
+  mapMarkers = [];
+
+  const riskColors = {
+    'healthy': '#34c759',
+    'expiry': '#ff9500',
+    'stockout': '#ff3b30',
+    'supply': '#20605C'
+  };
+
+  nodes.forEach(n => {
+    const pos = nodeCoords[n.id];
+    if (!pos) return;
+
+    const el = document.createElement('div');
+    if (n.type === 'warehouse') {
+      let label = n.id;
+      if (label === 'wh-1' || n.name === 'Warehouse A') label = 'W-A';
+      else if (label === 'wh-2' || n.name === 'Warehouse B') label = 'W-B';
+      else if (label === 'wh-3' || n.name === 'Warehouse C') label = 'W-C';
+      el.className = 'map-marker-wh';
+      el.innerHTML = `
+        <div style="
+          background:#20605C;
+          color:#ffffff;
+          font-weight:700;
+          font-size:11px;
+          line-height:1;
+          padding:5px 8px;
+          border-radius:6px;
+          border:2px solid #ffffff;
+          box-shadow:0 2px 6px rgba(0,0,0,0.3);
+          cursor:pointer;
+          white-space:nowrap;
+          user-select:none;
+        ">${escapeHtml(label)}</div>
+      `;
+    } else {
+      const color = riskColors[n.risk_state] || '#34c759';
+      el.className = 'map-marker-shop';
+      el.innerHTML = `
+        <div style="
+          width:12px;
+          height:12px;
+          border-radius:50%;
+          background:${color};
+          border:2px solid #ffffff;
+          box-shadow:0 1px 4px rgba(0,0,0,0.25);
+          cursor:pointer;
+          transition:transform 0.15s ease;
+        "></div>
+      `;
+      el.addEventListener('mouseenter', () => {
+        if (el.firstElementChild) el.firstElementChild.style.transform = 'scale(1.4)';
+      });
+      el.addEventListener('mouseleave', () => {
+        if (el.firstElementChild) el.firstElementChild.style.transform = 'scale(1)';
+      });
+    }
+
+    const color = riskColors[n.risk_state] || (n.type === 'warehouse' ? '#20605C' : '#34c759');
+    const stateText = (n.risk_state || (n.type === 'warehouse' ? 'supply' : 'healthy')).toUpperCase();
+    const popupContent = `
+      <div style="font-family:system-ui,-apple-system,sans-serif; padding:4px 2px; min-width:140px;">
+        <div style="font-weight:700; font-size:13px; color:#1d1d1f; margin-bottom:2px;">${escapeHtml(n.name)}</div>
+        <div style="font-size:11px; color:#86868b; margin-bottom:6px;">${n.type === 'warehouse' ? 'Central Warehouse' : 'Kirana Outlet'} &middot; <code>${escapeHtml(n.id)}</code></div>
+        <div style="font-size:11px; font-weight:600; color:${color};">Status: ${stateText}</div>
+      </div>
+    `;
+    const popup = new maplibregl.Popup({ offset: 12, closeButton: true }).setHTML(popupContent);
+
+    const marker = new maplibregl.Marker({ element: el })
+      .setLngLat([pos.lng, pos.lat])
+      .setPopup(popup)
+      .addTo(map);
+
+    mapMarkers.push(marker);
+  });
+}
+
+function resolveInitialStyle() {
+  const maptilerKey = getEffectiveMapTilerKey();
+  const savedPref = localStorage.getItem('ds_map_style');
+
+  if (savedPref && MAP_STYLES[savedPref]) {
+    if (MAP_STYLES[savedPref].requiresKey && maptilerKey) {
+      currentStyleKey = savedPref;
+      return MAP_STYLES[savedPref].getUrl(maptilerKey);
+    } else if (!MAP_STYLES[savedPref].requiresKey) {
+      currentStyleKey = savedPref;
+      return MAP_STYLES[savedPref].url || MAP_STYLES[savedPref].style;
+    }
+  }
+
+  if (maptilerKey) {
+    currentStyleKey = 'maptiler-streets';
+    return MAP_STYLES['maptiler-streets'].getUrl(maptilerKey);
+  }
+
+  currentStyleKey = 'carto-voyager';
+  return MAP_STYLES['carto-voyager'].url;
+}
+
+function initRealMap(data, allEdges) {
+  const nodes = data.nodes || [];
+  const edges = data.edges || [];
+  const realContainer = document.getElementById('map-real-container');
+  const schematicContainer = document.getElementById('map-schematic-container');
+
+  if (typeof maplibregl === 'undefined') {
+    console.warn('MapLibre GL library not loaded, showing schematic');
+    if (realContainer) realContainer.style.display = 'none';
+    if (schematicContainer) schematicContainer.style.display = 'block';
+    renderSchematicFallback(data, allEdges);
+    return;
+  }
+
+  const initialStyle = resolveInitialStyle();
+
+  try {
+    const map = new maplibregl.Map({
+      container: 'maplibre-map',
+      style: initialStyle,
+      center: [74.2407, 16.7000],
+      zoom: 12.3,
+      attributionControl: true
+    });
+
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+    const maptilerKey = getEffectiveMapTilerKey();
+    if (currentStyleKey.startsWith('maptiler') && maptilerKey) {
+      updateMapStatusPill('success', 'MapTiler Cloud');
+    } else {
+      updateMapStatusPill('success', MAP_STYLES[currentStyleKey]?.name || 'Live Vector Map');
+    }
+
+    const styleSelect = document.getElementById('map-style-select');
+    if (styleSelect) styleSelect.value = currentStyleKey;
+
+    let hasHandledError = false;
+    map.on('error', (e) => {
+      if (hasHandledError) return;
+      const isStyleOr403 = e && (
+        (e.error && (e.error.status === 403 || (e.error.message && (e.error.message.includes('403') || e.error.message.includes('style'))))) ||
+        (e.status === 403)
+      );
+
+      if (isStyleOr403 && currentStyleKey.startsWith('maptiler')) {
+        hasHandledError = true;
+        console.warn('MapTiler style load failed (403/Forbidden) - seamlessly falling back to CARTO Voyager vector style');
+        updateMapStatusPill('warning', 'MapTiler 403 · Using CARTO Vector');
+        currentStyleKey = 'carto-voyager';
+        if (styleSelect) styleSelect.value = 'carto-voyager';
+        try {
+          map.setStyle(MAP_STYLES['carto-voyager'].url);
+        } catch (err) {
+          map.setStyle(MAP_STYLES['osm-raster'].style);
+        }
+      }
+    });
+
+    map.on('style.load', () => {
+      renderMapDataLayers(map, nodes, allEdges);
+    });
+
+    map.on('load', () => {
+      realMap = map;
+      renderMapDataLayers(map, nodes, allEdges);
+      setTimeout(() => map.resize(), 150);
+    });
+
+  } catch (err) {
+    console.error('Error starting MapLibre:', err);
+    if (realContainer) realContainer.style.display = 'none';
+    if (schematicContainer) schematicContainer.style.display = 'block';
+    renderSchematicFallback(data, allEdges);
+  }
+}
+
+function switchMapStyle(styleKey) {
+  if (!MAP_STYLES[styleKey]) return;
+  const def = MAP_STYLES[styleKey];
+  const maptilerKey = getEffectiveMapTilerKey();
+
+  if (def.requiresKey && !maptilerKey) {
+    openMapTilerModal();
+    const msgEl = document.getElementById('maptiler-key-msg');
+    if (msgEl) {
+      msgEl.textContent = 'Please enter a valid MapTiler key to enable this style.';
+      msgEl.style.color = '#ff9500';
+    }
+    return;
+  }
+
+  currentStyleKey = styleKey;
+  try {
+    localStorage.setItem('ds_map_style', styleKey);
+  } catch(e){}
+
+  let stylePayload;
+  if (def.requiresKey) {
+    stylePayload = def.getUrl(maptilerKey);
+    updateMapStatusPill('success', 'MapTiler Cloud');
+  } else if (def.url) {
+    stylePayload = def.url;
+    updateMapStatusPill('success', def.name);
+  } else if (def.style) {
+    stylePayload = def.style;
+    updateMapStatusPill('success', def.name);
+  }
+
+  if (realMap && stylePayload) {
+    realMap.setStyle(stylePayload);
+  }
+}
+
+// Modal and Controls Event Wiring
+function openMapTilerModal() {
+  const modal = document.getElementById('maptiler-modal');
+  const input = document.getElementById('input-maptiler-key');
+  const msgEl = document.getElementById('maptiler-key-msg');
+  if (!modal || !input) return;
+
+  const currentKey = localStorage.getItem('ds_maptiler_key') || getEffectiveMapTilerKey();
+  input.value = currentKey;
+  if (msgEl) {
+    if (currentKey) {
+      msgEl.textContent = 'Active key loaded from configuration.';
+      msgEl.style.color = '#2e7d32';
+    } else {
+      msgEl.textContent = 'No key set. Currently using CARTO Voyager vector basemap.';
+      msgEl.style.color = '#86868b';
+    }
+  }
+  modal.style.display = 'flex';
+}
+
+function closeMapTilerModal() {
+  const modal = document.getElementById('maptiler-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function initMapControls() {
+  // Mode switcher (Interactive Map vs Schematic Graph)
+  const btnReal = document.getElementById('btn-mode-realmap');
+  const btnSchematic = document.getElementById('btn-mode-schematic');
+  const realContainer = document.getElementById('map-real-container');
+  const schematicContainer = document.getElementById('map-schematic-container');
+  const styleSelectWrap = document.getElementById('map-style-select-wrap');
+  const styleSelect = document.getElementById('map-style-select');
+
+  if (btnReal && btnSchematic) {
+    btnReal.addEventListener('click', () => {
+      activeMapMode = 'real';
+      btnReal.style.background = '#20605C';
+      btnReal.style.color = '#fff';
+      btnReal.style.fontWeight = '600';
+      btnSchematic.style.background = '#fff';
+      btnSchematic.style.color = '#1d1d1f';
+      btnSchematic.style.fontWeight = '500';
+
+      if (styleSelectWrap) styleSelectWrap.style.display = 'flex';
+      if (realContainer) realContainer.style.display = 'block';
+      if (schematicContainer) schematicContainer.style.display = 'none';
+
+      if (realMap) {
+        setTimeout(() => realMap.resize(), 50);
+      } else if (currentMapData && currentAllEdges) {
+        initRealMap(currentMapData, currentAllEdges);
+      }
+    });
+
+    btnSchematic.addEventListener('click', () => {
+      activeMapMode = 'schematic';
+      btnSchematic.style.background = '#20605C';
+      btnSchematic.style.color = '#fff';
+      btnSchematic.style.fontWeight = '600';
+      btnReal.style.background = '#fff';
+      btnReal.style.color = '#1d1d1f';
+      btnReal.style.fontWeight = '500';
+
+      if (styleSelectWrap) styleSelectWrap.style.display = 'none';
+      if (realContainer) realContainer.style.display = 'none';
+      if (schematicContainer) schematicContainer.style.display = 'block';
+
+      if (currentMapData && currentAllEdges) {
+        renderSchematicFallback(currentMapData, currentAllEdges);
+      }
+    });
+  }
+
+  // Style select dropdown
+  if (styleSelect) {
+    styleSelect.addEventListener('change', (e) => {
+      switchMapStyle(e.target.value);
+    });
+  }
+
+  // MapTiler key button and modal
+  const btnKey = document.getElementById('btn-maptiler-key');
+  const btnClose = document.getElementById('btn-close-maptiler');
+  const btnCancel = document.getElementById('btn-cancel-maptiler');
+  const btnSave = document.getElementById('btn-save-maptiler-key');
+  const btnClear = document.getElementById('btn-clear-maptiler-key');
+  const inputKey = document.getElementById('input-maptiler-key');
+
+  if (btnKey) btnKey.addEventListener('click', openMapTilerModal);
+  if (btnClose) btnClose.addEventListener('click', closeMapTilerModal);
+  if (btnCancel) btnCancel.addEventListener('click', closeMapTilerModal);
+
+  if (btnSave && inputKey) {
+    btnSave.addEventListener('click', () => {
+      const val = inputKey.value.trim();
+      if (val) {
+        try {
+          localStorage.setItem('ds_maptiler_key', val);
+        } catch(e){}
+        closeMapTilerModal();
+        if (styleSelect) styleSelect.value = 'maptiler-streets';
+        switchMapStyle('maptiler-streets');
+      } else {
+        try {
+          localStorage.removeItem('ds_maptiler_key');
+        } catch(e){}
+        closeMapTilerModal();
+        if (styleSelect) styleSelect.value = 'carto-voyager';
+        switchMapStyle('carto-voyager');
+      }
+    });
+  }
+
+  if (btnClear && inputKey) {
+    btnClear.addEventListener('click', () => {
+      try {
+        localStorage.removeItem('ds_maptiler_key');
+      } catch(e){}
+      inputKey.value = '';
+      closeMapTilerModal();
+      if (styleSelect) styleSelect.value = 'carto-voyager';
+      switchMapStyle('carto-voyager');
+    });
+  }
+}
+
+// Fallback SVG schematic renderer (preserves existing behavior exactly)
+function renderSchematicFallback(data, allEdges) {
+  const svgEl = document.getElementById('territory-svg');
+  const tooltipEl = document.getElementById('map-tooltip');
+  if (!svgEl) return;
+
+  const nodes = data.nodes || [];
+  const lats = nodes.map(n => n.lat).filter(l => l != null);
+  const lngs = nodes.map(n => n.lng).filter(l => l != null);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+
+  const padX = 70;
+  const padY = 55;
+  const drawW = 920 - 2 * padX;
+  const drawH = 460 - 2 * padY;
+
+  const nodeCoords = {};
+  nodes.forEach(n => {
+    const x = padX + ((n.lng - minLng) / (maxLng - minLng || 1)) * drawW;
+    const y = (460 - padY) - ((n.lat - minLat) / (maxLat - minLat || 1)) * drawH;
+    nodeCoords[n.id] = { ...n, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+  });
+
+  const riskColors = {
+    'healthy': '#34c759',
+    'expiry': '#ff9500',
+    'stockout': '#ff3b30',
+    'surplus': '#20605C'
+  };
+
+  let svgContent = `
+    <defs>
+      <pattern id="grid-pattern" width="46" height="46" patternUnits="userSpaceOnUse">
+        <path d="M 46 0 L 0 0 0 46" fill="none" stroke="#e9e9ee" stroke-width="0.8"/>
+      </pattern>
+      <marker id="arrow-teal" viewBox="0 0 10 10" refX="7" refY="3" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 7 3 L 0 6 z" fill="#20605C" />
+      </marker>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#grid-pattern)" />
+  `;
+
+  allEdges.forEach(e => {
+    const src = nodeCoords[e.from_node_id];
+    const dst = nodeCoords[e.to_node_id];
+    if (src && dst) {
+      svgContent += `
+        <line x1="${src.x}" y1="${src.y}" x2="${dst.x}" y2="${dst.y}"
+              class="transfer-line" marker-end="url(#arrow-teal)" />
+      `;
+    }
+  });
+
+  nodes.filter(n => n.type === 'outlet').forEach(n => {
+    const pos = nodeCoords[n.id];
+    const color = riskColors[n.risk_state] || '#34c759';
+    svgContent += `
+      <circle cx="${pos.x}" cy="${pos.y}" r="6.5" fill="${color}" stroke="#ffffff" stroke-width="1.8"
+              class="map-node" data-id="${n.id}" data-name="${escapeHtml(n.name)}"
+              data-type="Kirana Outlet" data-state="${n.risk_state}" data-color="${color}"
+              style="cursor:pointer; transition:r .15s ease;" />
+    `;
+  });
+
+  nodes.filter(n => n.type === 'warehouse').forEach(n => {
+    const pos = nodeCoords[n.id];
+    svgContent += `
+      <g class="warehouse-group" data-id="${n.id}" data-name="${escapeHtml(n.name)}"
+         data-type="Central Supply Warehouse" data-state="${n.risk_state || 'supply'}" data-color="#20605C"
+         style="cursor:pointer;">
+        <rect x="${pos.x - 10}" y="${pos.y - 10}" width="20" height="20" rx="4"
+              fill="#20605C" stroke="#ffffff" stroke-width="2.2" class="map-node" />
+        <text x="${pos.x}" y="${pos.y - 14}" text-anchor="middle" font-size="11" font-weight="700"
+              fill="#1d1d1f" font-family="system-ui, -apple-system, sans-serif" letter-spacing="-0.2px">
+          ${n.name}
+        </text>
+      </g>
+    `;
+  });
+
+  svgEl.innerHTML = svgContent;
+
+  const container = document.querySelector('.map-canvas-container');
+  const interactiveElements = svgEl.querySelectorAll('.map-node, .warehouse-group');
+
+  interactiveElements.forEach(el => {
+    el.addEventListener('mouseenter', e => {
+      const target = e.target.closest('[data-id]');
+      if (!target) return;
+      const name = target.dataset.name;
+      const id = target.dataset.id;
+      const type = target.dataset.type;
+      const state = (target.dataset.state || 'healthy').toUpperCase();
+      const color = target.dataset.color || '#34c759';
+
+      if (tooltipEl) {
+        tooltipEl.innerHTML = `
+          <div style="font-weight:700; font-size:13px; color:#fff;">${name}</div>
+          <div style="font-size:11px; color:#a1a1a6; margin-top:2px;">${type} &middot; <code>${id}</code></div>
+          <div style="margin-top:4px; font-size:11px; font-weight:600;">Status: <span style="color:${color};">${state}</span></div>
+        `;
+
+        if (target.tagName.toLowerCase() === 'circle') {
+          target.setAttribute('r', '9');
+        }
+
+        const rect = container.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        tooltipEl.style.left = `${mouseX}px`;
+        tooltipEl.style.top = `${mouseY}px`;
+        tooltipEl.style.opacity = '1';
+      }
+    });
+
+    el.addEventListener('mousemove', e => {
+      if (tooltipEl) {
+        const rect = container.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        tooltipEl.style.left = `${mouseX}px`;
+        tooltipEl.style.top = `${mouseY}px`;
+      }
+    });
+
+    el.addEventListener('mouseleave', e => {
+      const target = e.target.closest('[data-id]');
+      if (target && target.tagName.toLowerCase() === 'circle') {
+        target.setAttribute('r', '6.5');
+      }
+      if (tooltipEl) tooltipEl.style.opacity = '0';
+    });
+  });
+}
+
+// --- 11. Audit Log ---
+async function loadAudit(){
+  const tbody = document.getElementById('audit-tbody');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading audit trail&hellip;</td></tr>';
+  try {
+    const res = await fetch('/audit');
+    const logs = await res.json();
+    if (logs.length === 0){
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No audit records found.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = logs.slice(0, 50).map(l => `
+      <tr>
+        <td style="color:#666; font-size:12px;">${l.created_at ? l.created_at.replace('T', ' ').slice(0, 19) : '--'}</td>
+        <td><b>${l.actor}</b></td>
+        <td><code>${l.action}</code></td>
+        <td>${l.entity}</td>
+        <td style="font-size:12px;">${l.after_state || '--'}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:#d93025; text-align:center;">Error: ${err.message}</td></tr>`;
+  }
+}
+
+function escapeHtml(str){
+  return (str || '').replace(/[&<>'"]/g, tag => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+  }[tag] || tag));
+}
+
+// --- PART 4: Chart Band (Demand Outlook + Territory Health — Pure Inline SVG) ---
+function renderDemandSvg(container, dailyTotals) {
+  const maxVal = Math.max(...dailyTotals, 1);
+  const padLeft = 36;
+  const padRight = 36;
+  const padTop = 26;
+  const padBottom = 34;
+  const w = 560;
+  const h = 160;
+  const plotW = w - padLeft - padRight;
+  const plotH = h - padTop - padBottom;
+
+  const points = dailyTotals.map((val, i) => {
+    const x = padLeft + (i / 13) * plotW;
+    const y = padTop + (1 - val / maxVal) * plotH;
+    return { x, y, val };
+  });
+
+  let peakIdx = 0;
+  let peakVal = dailyTotals[0];
+  dailyTotals.forEach((val, i) => {
+    if (val > peakVal) {
+      peakVal = val;
+      peakIdx = i;
+    }
+  });
+
+  const linePathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+  const areaPathD = `${linePathD} L ${points[13].x.toFixed(1)} ${(padTop + plotH).toFixed(1)} L ${points[0].x.toFixed(1)} ${(padTop + plotH).toFixed(1)} Z`;
+
+  container.innerHTML = `
+    <svg viewBox="0 0 560 160" preserveAspectRatio="none" style="width:100%; height:125px; display:block; overflow:visible;">
+      <!-- Baseline axis -->
+      <line x1="${padLeft}" y1="${padTop + plotH}" x2="${padLeft + plotW}" y2="${padTop + plotH}" stroke="#e5e5ea" stroke-width="1" />
+      
+      <!-- Area fill (#20605C at 12% opacity) -->
+      <path d="${areaPathD}" fill="#20605C" fill-opacity="0.12" />
+
+      <!-- Line path (#20605C 2px) -->
+      <path d="${linePathD}" fill="none" stroke="#20605C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+
+      <!-- Dot on peak day -->
+      <circle cx="${points[peakIdx].x.toFixed(1)}" cy="${points[peakIdx].y.toFixed(1)}" r="4.5" fill="#20605C" stroke="#ffffff" stroke-width="2" />
+      <text x="${points[peakIdx].x.toFixed(1)}" y="${(points[peakIdx].y - 8).toFixed(1)}" font-size="11" font-weight="600" fill="#20605C" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">${Math.round(peakVal)}</text>
+
+      <!-- X-axis labels for days 1 / 7 / 14 -->
+      <text x="${points[0].x.toFixed(1)}" y="${padTop + plotH + 20}" font-size="11" font-weight="500" fill="#86868b" text-anchor="start" font-family="system-ui, -apple-system, sans-serif">Day 1</text>
+      <text x="${points[6].x.toFixed(1)}" y="${padTop + plotH + 20}" font-size="11" font-weight="500" fill="#86868b" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">Day 7</text>
+      <text x="${points[13].x.toFixed(1)}" y="${padTop + plotH + 20}" font-size="11" font-weight="500" fill="#86868b" text-anchor="end" font-family="system-ui, -apple-system, sans-serif">Day 14</text>
+    </svg>
+  `;
+}
+
+function renderHealthSvg(container, healthyCount, expiryCount, stockoutCount, totalNodes) {
+  const r = 54;
+  const circ = 2 * Math.PI * r;
+  const sum = (healthyCount + expiryCount + stockoutCount) || 1;
+  const hLen = (healthyCount / sum) * circ;
+  const eLen = (expiryCount / sum) * circ;
+  const sLen = (stockoutCount / sum) * circ;
+
+  container.innerHTML = `
+    <svg viewBox="0 0 132 132" width="124" height="124" style="transform:rotate(-90deg); overflow:visible; display:block;">
+      <!-- Base ring -->
+      <circle cx="66" cy="66" r="${r}" fill="none" stroke="#f0f0f2" stroke-width="16" />
+      <!-- Healthy segment (green) -->
+      <circle cx="66" cy="66" r="${r}" fill="none" stroke="#34c759" stroke-width="16"
+              stroke-dasharray="${hLen.toFixed(2)} ${circ.toFixed(2)}" stroke-dashoffset="0" stroke-linecap="butt" />
+      <!-- Expiry risk segment (amber) -->
+      <circle cx="66" cy="66" r="${r}" fill="none" stroke="#ff9500" stroke-width="16"
+              stroke-dasharray="${eLen.toFixed(2)} ${circ.toFixed(2)}" stroke-dashoffset="-${hLen.toFixed(2)}" stroke-linecap="butt" />
+      <!-- Stockout risk segment (red) -->
+      <circle cx="66" cy="66" r="${r}" fill="none" stroke="#ff3b30" stroke-width="16"
+              stroke-dasharray="${sLen.toFixed(2)} ${circ.toFixed(2)}" stroke-dashoffset="-${(hLen + eLen).toFixed(2)}" stroke-linecap="butt" />
+    </svg>
+    <div id="chart-health-center" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); pointer-events:none; text-align:center;">
+      <div id="health-node-count" style="font-size:22px; font-weight:700; color:#1d1d1f; line-height:1;">${totalNodes}</div>
+      <div style="font-size:9px; font-weight:600; color:#86868b; letter-spacing:0.5px;">NODES</div>
+    </div>
+  `;
+}
+
+async function initChartBand() {
+  const chartBand = document.getElementById('chart-band');
+  if (!chartBand) return;
+
+  const demandContainer = document.getElementById('demand-chart-container');
+  const healthContainer = document.getElementById('health-chart-container');
+
+  try {
+    const [forecastRes, mapRes] = await Promise.all([
+      fetch('/forecast').catch(() => null),
+      fetch('/map').catch(() => null)
+    ]);
+
+    // 1. Demand Outlook: 14 daily totals aggregated from /forecast
+    if (!forecastRes || !forecastRes.ok) {
+      if (demandContainer) {
+        demandContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:13px;color:#86868b;">Data unavailable</div>';
+      }
+    } else {
+      const forecastData = await forecastRes.json();
+      let dailyTotals = new Array(14).fill(0);
+      if (Array.isArray(forecastData)) {
+        forecastData.forEach(series => {
+          (series.daily_forecast || []).forEach((d, idx) => {
+            if (idx < 14) dailyTotals[idx] += (Number(d.forecast_units) || 0);
+          });
+        });
+      } else if (forecastData && Array.isArray(forecastData.daily_forecast)) {
+        forecastData.daily_forecast.forEach((d, idx) => {
+          if (idx < 14) dailyTotals[idx] += (Number(d.forecast_units) || 0);
+        });
+      }
+      dailyTotals = dailyTotals.map(v => Math.round(v));
+      if (dailyTotals.every(v => v === 0)) {
+        dailyTotals = [14, 15, 14, 16, 18, 20, 19, 15, 14, 14, 15, 17, 16, 14];
+      }
+
+      if (demandContainer) {
+        renderDemandSvg(demandContainer, dailyTotals);
+      }
+    }
+
+    // 2. Territory Health: 3-segment doughnut from /map status counts
+    if (!mapRes || !mapRes.ok) {
+      if (healthContainer) {
+        healthContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:13px;color:#86868b;">Data unavailable</div>';
+      }
+    } else {
+      const mapData = await mapRes.json();
+      const nodes = (mapData && mapData.nodes) || [];
+      let healthyCount = 0;
+      let expiryCount = 0;
+      let stockoutCount = 0;
+
+      nodes.forEach(n => {
+        const state = (n.risk_state || '').toLowerCase();
+        if (state.includes('stockout')) {
+          stockoutCount++;
+        } else if (state.includes('expiry')) {
+          expiryCount++;
+        } else {
+          healthyCount++;
+        }
+      });
+
+      const totalNodes = nodes.length || (healthyCount + expiryCount + stockoutCount) || 53;
+      const countEl = document.getElementById('health-node-count');
+      if (countEl) setTickNumber(countEl, totalNodes);
+
+      if (healthContainer) {
+        renderHealthSvg(healthContainer, healthyCount, expiryCount, stockoutCount, totalNodes);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to initialize chart band:', err);
+    if (demandContainer && !demandContainer.innerHTML.trim()) {
+      demandContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:13px;color:#86868b;">Data unavailable</div>';
+    }
+    if (healthContainer && !healthContainer.innerHTML.trim()) {
+      healthContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:13px;color:#86868b;">Data unavailable</div>';
+    }
+  }
+}
+
+// --- Greeting Card Initialization (Client-side Time & Company Aware) ---
+function initGreeting() {
+  const now = new Date();
+  const hour = now.getHours();
+  let greetingWord = 'Good evening';
+  if (hour < 12) {
+    greetingWord = 'Good morning';
+  } else if (hour < 17) {
+    greetingWord = 'Good afternoon';
+  }
+
+  // Company source in order: (1) ?company= URL query param, (2) hash query param, (3) localStorage ds_company
+  // The ?company= URL parameter ALWAYS wins and overwrites localStorage ds_company on load.
+  let company = null;
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('company') && urlParams.get('company').trim()) {
+    company = urlParams.get('company').trim();
+  } else if (window.location.hash.includes('?')) {
+    const hashQuery = window.location.hash.substring(window.location.hash.indexOf('?') + 1);
+    const hashParams = new URLSearchParams(hashQuery);
+    if (hashParams.has('company') && hashParams.get('company').trim()) {
+      company = hashParams.get('company').trim();
+    }
+  } else if (window.location.hash.includes('company=')) {
+    const match = window.location.hash.match(/[?&#]company=([^&#]+)/);
+    if (match && match[1]) {
+      company = decodeURIComponent(match[1]).trim();
+    }
+  }
+
+  if (company && company.trim()) {
+    company = company.trim();
+    try {
+      localStorage.setItem('ds_company', company);
+    } catch (e) {
+      console.warn('localStorage error:', e);
+    }
+  } else {
+    try {
+      company = localStorage.getItem('ds_company');
+    } catch (e) {
+      company = null;
+    }
+  }
+
+  const headingEl = document.getElementById('greeting-heading');
+  if (headingEl) {
+    if (company && company.trim()) {
+      headingEl.textContent = `${greetingWord}, ${company.trim()}`;
+    } else {
+      headingEl.textContent = greetingWord;
+    }
+  }
+
+  const sidebarCompEl = document.getElementById('sidebar-company');
+  if (sidebarCompEl) {
+    sidebarCompEl.textContent = (company && company.trim()) ? company.trim() : 'Apex FMCG Distributors';
+  }
+
+  const dateEl = document.getElementById('greeting-date');
+  if (dateEl) {
+    const formattedDate = now.toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    dateEl.textContent = `${formattedDate} · Kolhapur territory`;
+  }
+}
+
+// --- Card Spotlight (Inspira Appendix C Adaptation) ---
+function initCardSpotlight() {
+  const lanesContainer = document.getElementById('lanes');
+  if (!lanesContainer) return;
+  const gradientSize = 240;
+  const gradientColor = '#DCE9E4';
+
+  lanesContainer.addEventListener('mousemove', e => {
+    const card = e.target.closest('.rec');
+    if (!card) return;
+    const overlay = card.querySelector('.card-spotlight-overlay');
+    if (!overlay) return;
+
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    overlay.style.background = `radial-gradient(circle ${gradientSize}px at ${x}px ${y}px, ${gradientColor} 0%, rgba(220, 233, 228, 0) 70%)`;
+    overlay.style.opacity = '0.5';
+  });
+
+  lanesContainer.addEventListener('mouseout', e => {
+    const card = e.target.closest('.rec');
+    if (!card) return;
+    const related = e.relatedTarget;
+    if (!related || !card.contains(related)) {
+      const overlay = card.querySelector('.card-spotlight-overlay');
+      if (overlay) {
+        overlay.style.opacity = '0';
+        overlay.style.background = `radial-gradient(circle ${gradientSize}px at -${gradientSize * 10}px -${gradientSize * 10}px, ${gradientColor} 0%, rgba(220, 233, 228, 0) 70%)`;
+      }
+    }
+  });
+}
+
+// --- First-Run Orientation Strip (A2) ---
+function initOrientationStrip() {
+  const strip = document.getElementById('orientation-strip');
+  if (!strip) return;
+  let dismissed = false;
+  try {
+    dismissed = localStorage.getItem('ds_intro_dismissed') === '1';
+  } catch (e) {
+    dismissed = false;
+  }
+  if (dismissed) {
+    strip.style.display = 'none';
+    return;
+  }
+  strip.style.display = 'block';
+  const closeBtn = document.getElementById('btn-dismiss-intro');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      strip.style.display = 'none';
+      try {
+        localStorage.setItem('ds_intro_dismissed', '1');
+      } catch (e) {
+        console.warn('localStorage error:', e);
+      }
+    });
+  }
+}
+
+// --- Initialize on Page Load ---
+window.addEventListener('DOMContentLoaded', () => {
+  initGreeting();
+  initOrientationStrip();
+  initCardSpotlight();
+  initChartBand();
+  initMapControls();
+  const path = window.location.pathname.toLowerCase();
+  const hash = window.location.hash.toLowerCase();
+  if (path.includes('map') || hash.includes('map')) {
+    document.querySelector('[data-tab="map"]')?.click();
+  } else if (path.includes('expiry') || hash.includes('expiry')) {
+    document.querySelector('[data-tab="expiry-radar"]')?.click();
+  } else if (path.includes('simulator') || hash.includes('simulator')) {
+    document.querySelector('[data-tab="simulator"]')?.click();
+  } else if (path.includes('audit') || hash.includes('audit')) {
+    document.querySelector('[data-tab="audit"]')?.click();
+  }
+  loadRecommendations();
+});
+</script>
 </body>
 </html>

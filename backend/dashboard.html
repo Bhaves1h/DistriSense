@@ -764,6 +764,47 @@
         <div id="map-stats" style="margin-left:auto; font-size:12px; color:#86868b;">Loading network nodes&hellip;</div>
       </div>
 
+      <!-- Map Controls Toolbar -->
+      <div class="map-controls-toolbar" style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; padding:8px 12px; background:#fbfbfd; border:1px solid #e5e5ea; border-radius:10px; font-size:13px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <!-- View Switcher -->
+          <div class="btn-group-toggle" style="display:inline-flex; border:1px solid #d2d2d7; border-radius:8px; overflow:hidden; background:#fff;">
+            <button id="btn-mode-realmap" type="button" class="btn-map-mode active" style="padding:5px 12px; font-size:12px; font-weight:600; border:none; background:#20605C; color:#fff; cursor:pointer;">
+              &#x1F5FA;&#xFE0F; Interactive Map
+            </button>
+            <button id="btn-mode-schematic" type="button" class="btn-map-mode" style="padding:5px 12px; font-size:12px; font-weight:500; border:none; background:#fff; color:#1d1d1f; cursor:pointer;">
+              &#x1F4CA; Schematic Graph
+            </button>
+          </div>
+
+          <!-- Style Selector Dropdown -->
+          <div id="map-style-select-wrap" style="display:flex; align-items:center; gap:6px;">
+            <label for="map-style-select" style="font-size:12px; color:#666; font-weight:500;">Style:</label>
+            <select id="map-style-select" style="font-size:12px; padding:4px 8px; border:1px solid #d2d2d7; border-radius:6px; background:#fff; color:#1d1d1f; cursor:pointer;">
+              <option value="carto-voyager">CARTO Voyager (Vector - Free)</option>
+              <option value="carto-positron">CARTO Positron (Light - Free)</option>
+              <option value="carto-dark">CARTO Dark Matter (Free)</option>
+              <option value="osm-raster">OpenStreetMap (Raster - Free)</option>
+              <option value="maptiler-streets">MapTiler Streets (Cloud)</option>
+              <option value="maptiler-satellite">MapTiler Satellite Hybrid (Cloud)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:10px; margin-left:auto;">
+          <!-- Provider Status Badge -->
+          <span id="map-status-pill" style="display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:3px 9px; border-radius:9999px; background:#e8f5e9; color:#2e7d32; border:1px solid #c8e6c9;">
+            <span style="width:6px; height:6px; border-radius:50%; background:#2e7d32; display:inline-block;"></span>
+            <span id="map-status-text">Live Vector Map</span>
+          </span>
+
+          <!-- MapTiler Key Config Button -->
+          <button id="btn-maptiler-key" type="button" style="display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:500; padding:5px 10px; border-radius:6px; border:1px solid #d2d2d7; background:#fff; color:#20605C; cursor:pointer;">
+            &#x1F511; MapTiler Key
+          </button>
+        </div>
+      </div>
+
       <!-- Real MapTiler / MapLibre Container -->
       <div id="map-real-container" style="position:relative; width:100%; height:480px; border-radius:12px; overflow:hidden; border:1px solid #ececee;">
         <div id="maplibre-map" style="width:100%; height:100%;"></div>
@@ -847,6 +888,40 @@
     </div>
     <div class="modal-footer" style="margin-top:22px;">
       <button class="btn-primary" id="btn-dismiss-formula">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- MapTiler Key Modal -->
+<div class="modal-overlay" id="maptiler-modal">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-title">
+      <span>MapTiler Cloud Key Configuration</span>
+      <button class="modal-close" id="btn-close-maptiler">&times;</button>
+    </div>
+    <div class="modal-content">
+      <p style="font-size:13px; color:#666; margin-bottom:12px; line-height:1.5;">
+        DistriSense connects to <strong>MapTiler Cloud</strong> for custom vector basemaps (Streets v2, Satellite Hybrid).
+        If no key is configured or if a key returns 403 Forbidden, DistriSense automatically falls back to CARTO Voyager vector tiles so territory tracking is always live.
+      </p>
+
+      <div style="margin-bottom:14px;">
+        <label for="input-maptiler-key" style="display:block; font-size:12px; font-weight:600; color:#1d1d1f; margin-bottom:6px;">MapTiler API Key:</label>
+        <input type="text" id="input-maptiler-key" placeholder="Paste your MapTiler API Key (e.g. from cloud.maptiler.com)"
+               style="width:100%; padding:9px 12px; font-size:13px; font-family:monospace; border:1px solid #d2d2d7; border-radius:8px; box-sizing:border-box;">
+        <div id="maptiler-key-msg" style="font-size:11px; margin-top:6px; color:#86868b;"></div>
+      </div>
+
+      <div style="background:#f5f5f7; border-radius:8px; padding:10px 12px; font-size:12px; color:#666; line-height:1.4;">
+        Don't have a key? Get one for free at <a href="https://cloud.maptiler.com/account/keys/" target="_blank" style="color:#20605C; text-decoration:underline;">cloud.maptiler.com</a> or enjoy the built-in free CARTO Voyager vector basemap.
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+      <button type="button" id="btn-clear-maptiler-key" style="background:transparent; border:none; color:#ff3b30; font-size:12px; cursor:pointer; text-decoration:underline;">Clear Stored Key</button>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn-copy" id="btn-cancel-maptiler" style="background:#f2f2f7; color:#1d1d1f; border:none;">Cancel</button>
+        <button type="button" class="btn-copy" id="btn-save-maptiler-key" style="background:#20605C; color:#fff; border:none;">Save &amp; Apply</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1795,11 +1870,118 @@ document.getElementById('btn-convert-plan').addEventListener('click', async () =
   }
 });
 
-// --- 10. Real Territory Map (MapTiler + MapLibre GL v4 with Schematic Fallback) ---
-const MAPTILER_KEY = 'ZIMzn5S5fYTzO57crkNO';
+// --- 10. Real Territory Map (MapTiler + MapLibre GL v4 with Resilient Basemap Cascade) ---
+/* __MAPTILER_KEY_INJECTION__ */
+window.ENV_MAPTILER_KEY = window.ENV_MAPTILER_KEY || '';
+
+const MAP_STYLES = {
+  'carto-voyager': {
+    name: 'CARTO Voyager (Vector)',
+    isVector: true,
+    requiresKey: false,
+    url: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
+  },
+  'carto-positron': {
+    name: 'CARTO Positron (Light)',
+    isVector: true,
+    requiresKey: false,
+    url: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+  },
+  'carto-dark': {
+    name: 'CARTO Dark Matter',
+    isVector: true,
+    requiresKey: false,
+    url: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
+  },
+  'osm-raster': {
+    name: 'OpenStreetMap (Raster)',
+    isVector: false,
+    requiresKey: false,
+    style: {
+      version: 8,
+      sources: {
+        'osm-tiles': {
+          type: 'raster',
+          tiles: [
+            'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+          ],
+          tileSize: 256,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }
+      },
+      layers: [
+        {
+          id: 'osm-tiles-layer',
+          type: 'raster',
+          source: 'osm-tiles',
+          minzoom: 0,
+          maxzoom: 19
+        }
+      ]
+    }
+  },
+  'maptiler-streets': {
+    name: 'MapTiler Streets (Cloud)',
+    isVector: true,
+    requiresKey: true,
+    getUrl: (k) => `https://api.maptiler.com/maps/streets-v2/style.json?key=${k}`
+  },
+  'maptiler-satellite': {
+    name: 'MapTiler Satellite Hybrid',
+    isVector: true,
+    requiresKey: true,
+    getUrl: (k) => `https://api.maptiler.com/maps/hybrid/style.json?key=${k}`
+  }
+};
+
+function getEffectiveMapTilerKey() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const hashQuery = window.location.hash.includes('?') ? window.location.hash.substring(window.location.hash.indexOf('?') + 1) : '';
+  const hashParams = new URLSearchParams(hashQuery);
+  const key = (
+    urlParams.get('maptiler_key') ||
+    hashParams.get('maptiler_key') ||
+    urlParams.get('key') ||
+    localStorage.getItem('ds_maptiler_key') ||
+    (window.ENV_MAPTILER_KEY || '') ||
+    (window.MAPTILER_KEY || '')
+  ).trim();
+  // Filter out revoked placeholder keys that are known to return 403
+  if (key === 'ZIMzn5S5fYTzO57crkNO') return '';
+  return key;
+}
+
 let realMap = null;
-let mapFailed = false;
-let mapLoading = false;
+let currentMapData = null;
+let currentAllEdges = null;
+let currentStyleKey = 'carto-voyager';
+let activeMapMode = 'real'; // 'real' or 'schematic'
+let mapMarkers = [];
+
+function updateMapStatusPill(type, text) {
+  const pill = document.getElementById('map-status-pill');
+  const textEl = document.getElementById('map-status-text');
+  if (!pill || !textEl) return;
+  textEl.textContent = text;
+  if (type === 'success') {
+    pill.style.background = '#e8f5e9';
+    pill.style.color = '#2e7d32';
+    pill.style.borderColor = '#c8e6c9';
+    if (pill.firstElementChild) pill.firstElementChild.style.background = '#2e7d32';
+  } else if (type === 'warning') {
+    pill.style.background = '#fff8e1';
+    pill.style.color = '#f57f17';
+    pill.style.borderColor = '#ffe082';
+    if (pill.firstElementChild) pill.firstElementChild.style.background = '#f57f17';
+  } else {
+    pill.style.background = '#e8f5e9';
+    pill.style.color = '#2e7d32';
+    pill.style.borderColor = '#c8e6c9';
+    if (pill.firstElementChild) pill.firstElementChild.style.background = '#2e7d32';
+  }
+}
 
 async function loadMap(){
   const statsEl = document.getElementById('map-stats');
@@ -1834,20 +2016,193 @@ async function loadMap(){
     }
   });
 
-  if (mapFailed) {
+  currentMapData = data;
+  currentAllEdges = allEdges;
+
+  if (activeMapMode === 'schematic') {
     renderSchematicFallback(data, allEdges);
     return;
   }
 
   if (realMap) {
-    realMap.resize();
+    setTimeout(() => realMap.resize(), 100);
+    renderMapDataLayers(realMap, nodes, allEdges);
     return;
   }
 
-  if (mapLoading) return;
-  mapLoading = true;
-
   initRealMap(data, allEdges);
+}
+
+function renderMapDataLayers(map, nodes, edges) {
+  if (!map) return;
+
+  // Coordinate mapping: nodes from /map have lat and lng in Kolhapur
+  const nodeCoords = {};
+  nodes.forEach(n => {
+    let lng = (n.lng != null) ? n.lng : 74.2407;
+    let lat = (n.lat != null) ? n.lat : 16.7000;
+    if (n.x != null && n.y != null) {
+      lng = 74.2433 + ((n.x - 50) / 50) * 0.055;
+      lat = 16.7050 + ((n.y - 50) / 50) * 0.045;
+    }
+    nodeCoords[n.id] = { lng, lat, ...n };
+  });
+
+  // 1. Draw Active Dispatches Routes
+  const routeFeatures = [];
+  edges.forEach(e => {
+    const src = nodeCoords[e.from_node_id];
+    const dst = nodeCoords[e.to_node_id];
+    if (src && dst) {
+      routeFeatures.push({
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [[src.lng, src.lat], [dst.lng, dst.lat]]
+        },
+        properties: {
+          from: e.from_node_id,
+          to: e.to_node_id,
+          isPending: !!e.isPending
+        }
+      });
+    }
+  });
+
+  try {
+    if (map.getLayer('dispatch-lines-layer')) map.removeLayer('dispatch-lines-layer');
+    if (map.getSource('dispatch-lines-src')) map.removeSource('dispatch-lines-src');
+
+    if (routeFeatures.length > 0) {
+      map.addSource('dispatch-lines-src', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: routeFeatures
+        }
+      });
+
+      map.addLayer({
+        id: 'dispatch-lines-layer',
+        type: 'line',
+        source: 'dispatch-lines-src',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round'
+        },
+        paint: {
+          'line-color': '#20605C',
+          'line-width': 2.5,
+          'line-dasharray': [2, 2]
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('Could not add route lines layer:', err);
+  }
+
+  // 2. Add Markers for Warehouses & Kirana Shops
+  mapMarkers.forEach(m => m.remove());
+  mapMarkers = [];
+
+  const riskColors = {
+    'healthy': '#34c759',
+    'expiry': '#ff9500',
+    'stockout': '#ff3b30',
+    'supply': '#20605C'
+  };
+
+  nodes.forEach(n => {
+    const pos = nodeCoords[n.id];
+    if (!pos) return;
+
+    const el = document.createElement('div');
+    if (n.type === 'warehouse') {
+      let label = n.id;
+      if (label === 'wh-1' || n.name === 'Warehouse A') label = 'W-A';
+      else if (label === 'wh-2' || n.name === 'Warehouse B') label = 'W-B';
+      else if (label === 'wh-3' || n.name === 'Warehouse C') label = 'W-C';
+      el.className = 'map-marker-wh';
+      el.innerHTML = `
+        <div style="
+          background:#20605C;
+          color:#ffffff;
+          font-weight:700;
+          font-size:11px;
+          line-height:1;
+          padding:5px 8px;
+          border-radius:6px;
+          border:2px solid #ffffff;
+          box-shadow:0 2px 6px rgba(0,0,0,0.3);
+          cursor:pointer;
+          white-space:nowrap;
+          user-select:none;
+        ">${escapeHtml(label)}</div>
+      `;
+    } else {
+      const color = riskColors[n.risk_state] || '#34c759';
+      el.className = 'map-marker-shop';
+      el.innerHTML = `
+        <div style="
+          width:12px;
+          height:12px;
+          border-radius:50%;
+          background:${color};
+          border:2px solid #ffffff;
+          box-shadow:0 1px 4px rgba(0,0,0,0.25);
+          cursor:pointer;
+          transition:transform 0.15s ease;
+        "></div>
+      `;
+      el.addEventListener('mouseenter', () => {
+        if (el.firstElementChild) el.firstElementChild.style.transform = 'scale(1.4)';
+      });
+      el.addEventListener('mouseleave', () => {
+        if (el.firstElementChild) el.firstElementChild.style.transform = 'scale(1)';
+      });
+    }
+
+    const color = riskColors[n.risk_state] || (n.type === 'warehouse' ? '#20605C' : '#34c759');
+    const stateText = (n.risk_state || (n.type === 'warehouse' ? 'supply' : 'healthy')).toUpperCase();
+    const popupContent = `
+      <div style="font-family:system-ui,-apple-system,sans-serif; padding:4px 2px; min-width:140px;">
+        <div style="font-weight:700; font-size:13px; color:#1d1d1f; margin-bottom:2px;">${escapeHtml(n.name)}</div>
+        <div style="font-size:11px; color:#86868b; margin-bottom:6px;">${n.type === 'warehouse' ? 'Central Warehouse' : 'Kirana Outlet'} &middot; <code>${escapeHtml(n.id)}</code></div>
+        <div style="font-size:11px; font-weight:600; color:${color};">Status: ${stateText}</div>
+      </div>
+    `;
+    const popup = new maplibregl.Popup({ offset: 12, closeButton: true }).setHTML(popupContent);
+
+    const marker = new maplibregl.Marker({ element: el })
+      .setLngLat([pos.lng, pos.lat])
+      .setPopup(popup)
+      .addTo(map);
+
+    mapMarkers.push(marker);
+  });
+}
+
+function resolveInitialStyle() {
+  const maptilerKey = getEffectiveMapTilerKey();
+  const savedPref = localStorage.getItem('ds_map_style');
+
+  if (savedPref && MAP_STYLES[savedPref]) {
+    if (MAP_STYLES[savedPref].requiresKey && maptilerKey) {
+      currentStyleKey = savedPref;
+      return MAP_STYLES[savedPref].getUrl(maptilerKey);
+    } else if (!MAP_STYLES[savedPref].requiresKey) {
+      currentStyleKey = savedPref;
+      return MAP_STYLES[savedPref].url || MAP_STYLES[savedPref].style;
+    }
+  }
+
+  if (maptilerKey) {
+    currentStyleKey = 'maptiler-streets';
+    return MAP_STYLES['maptiler-streets'].getUrl(maptilerKey);
+  }
+
+  currentStyleKey = 'carto-voyager';
+  return MAP_STYLES['carto-voyager'].url;
 }
 
 function initRealMap(data, allEdges) {
@@ -1856,202 +2211,239 @@ function initRealMap(data, allEdges) {
   const realContainer = document.getElementById('map-real-container');
   const schematicContainer = document.getElementById('map-schematic-container');
 
-  function triggerFallback() {
-    mapFailed = true;
-    mapLoading = false;
-    if (loadTimeout) { clearTimeout(loadTimeout); loadTimeout = null; }
-    if (realMap) {
-      try { realMap.remove(); } catch(e){}
-      realMap = null;
-    }
+  if (typeof maplibregl === 'undefined') {
+    console.warn('MapLibre GL library not loaded, showing schematic');
     if (realContainer) realContainer.style.display = 'none';
     if (schematicContainer) schematicContainer.style.display = 'block';
     renderSchematicFallback(data, allEdges);
-  }
-
-  if (typeof maplibregl === 'undefined') {
-    triggerFallback();
     return;
   }
 
-  let loadTimeout = setTimeout(() => {
-    console.warn('MapLibre load timeout (4s) - falling back to schematic');
-    triggerFallback();
-  }, 4000);
+  const initialStyle = resolveInitialStyle();
 
   try {
-    const primaryStyle = `https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`;
-    const fallbackStyle = `https://api.maptiler.com/maps/streets-v2/style.json?key=${MAPTILER_KEY}`;
-
     const map = new maplibregl.Map({
       container: 'maplibre-map',
-      style: primaryStyle,
-      center: [74.2433, 16.7050],
-      zoom: 12.5,
+      style: initialStyle,
+      center: [74.2407, 16.7000],
+      zoom: 12.3,
       attributionControl: true
     });
 
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
-    let styleSwapped = false;
+    const maptilerKey = getEffectiveMapTilerKey();
+    if (currentStyleKey.startsWith('maptiler') && maptilerKey) {
+      updateMapStatusPill('success', 'MapTiler Cloud');
+    } else {
+      updateMapStatusPill('success', MAP_STYLES[currentStyleKey]?.name || 'Live Vector Map');
+    }
+
+    const styleSelect = document.getElementById('map-style-select');
+    if (styleSelect) styleSelect.value = currentStyleKey;
+
+    let hasHandledError = false;
     map.on('error', (e) => {
-      if (!styleSwapped && e && e.error && e.error.message && e.error.message.includes('style')) {
-        styleSwapped = true;
+      if (hasHandledError) return;
+      const isStyleOr403 = e && (
+        (e.error && (e.error.status === 403 || (e.error.message && (e.error.message.includes('403') || e.error.message.includes('style'))))) ||
+        (e.status === 403)
+      );
+
+      if (isStyleOr403 && currentStyleKey.startsWith('maptiler')) {
+        hasHandledError = true;
+        console.warn('MapTiler style load failed (403/Forbidden) - seamlessly falling back to CARTO Voyager vector style');
+        updateMapStatusPill('warning', 'MapTiler 403 · Using CARTO Vector');
+        currentStyleKey = 'carto-voyager';
+        if (styleSelect) styleSelect.value = 'carto-voyager';
         try {
-          map.setStyle(fallbackStyle);
-          return;
-        } catch(err){}
+          map.setStyle(MAP_STYLES['carto-voyager'].url);
+        } catch (err) {
+          map.setStyle(MAP_STYLES['osm-raster'].style);
+        }
       }
-      if (!realMap) {
-        triggerFallback();
-      }
+    });
+
+    map.on('style.load', () => {
+      renderMapDataLayers(map, nodes, allEdges);
     });
 
     map.on('load', () => {
-      if (loadTimeout) {
-        clearTimeout(loadTimeout);
-        loadTimeout = null;
-      }
       realMap = map;
-      mapLoading = false;
-
-      // Deterministic coordinate conversion: x/y grid (0-100) -> Kolhapur coords
-      const nodeCoords = {};
-      nodes.forEach(n => {
-        let lng = (n.lng != null) ? n.lng : 74.2433;
-        let lat = (n.lat != null) ? n.lat : 16.7050;
-        if (n.x != null && n.y != null) {
-          lng = 74.2433 + ((n.x - 50) / 50) * 0.055;
-          lat = 16.7050 + ((n.y - 50) / 50) * 0.045;
-        }
-        nodeCoords[n.id] = { lng, lat, ...n };
-      });
-
-      // 1. Draw Active Dispatches Routes
-      const routeFeatures = [];
-      edges.forEach(e => {
-        const src = nodeCoords[e.from_node_id];
-        const dst = nodeCoords[e.to_node_id];
-        if (src && dst) {
-          routeFeatures.push({
-            type: 'Feature',
-            geometry: {
-              type: 'LineString',
-              coordinates: [[src.lng, src.lat], [dst.lng, dst.lat]]
-            },
-            properties: {
-              from: e.from_node_id,
-              to: e.to_node_id
-            }
-          });
-        }
-      });
-
-      if (routeFeatures.length > 0) {
-        map.addSource('dispatch-lines-src', {
-          type: 'geojson',
-          data: {
-            type: 'FeatureCollection',
-            features: routeFeatures
-          }
-        });
-
-        map.addLayer({
-          id: 'dispatch-lines-layer',
-          type: 'line',
-          source: 'dispatch-lines-src',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round'
-          },
-          paint: {
-            'line-color': '#20605C',
-            'line-width': 2,
-            'line-dasharray': [2, 2]
-          }
-        });
-      }
-
-      // Legend & status colours
-      const riskColors = {
-        'healthy': '#34c759',
-        'expiry': '#ff9500',
-        'stockout': '#ff3b30',
-        'supply': '#20605C'
-      };
-
-      // 2. Add Markers for Warehouses & Kirana Shops
-      nodes.forEach(n => {
-        const pos = nodeCoords[n.id];
-        if (!pos) return;
-
-        const el = document.createElement('div');
-        if (n.type === 'warehouse') {
-          let label = n.id;
-          if (label === 'wh-1' || n.name === 'Warehouse A') label = 'W-A';
-          else if (label === 'wh-2' || n.name === 'Warehouse B') label = 'W-B';
-          else if (label === 'wh-3' || n.name === 'Warehouse C') label = 'W-C';
-          el.className = 'map-marker-wh';
-          el.innerHTML = `
-            <div style="
-              background:#20605C;
-              color:#ffffff;
-              font-weight:700;
-              font-size:11px;
-              line-height:1;
-              padding:5px 8px;
-              border-radius:6px;
-              border:2px solid #ffffff;
-              box-shadow:0 2px 6px rgba(0,0,0,0.3);
-              cursor:pointer;
-              white-space:nowrap;
-              user-select:none;
-            ">${escapeHtml(label)}</div>
-          `;
-        } else {
-          const color = riskColors[n.risk_state] || '#34c759';
-          el.className = 'map-marker-shop';
-          el.innerHTML = `
-            <div style="
-              width:12px;
-              height:12px;
-              border-radius:50%;
-              background:${color};
-              border:2px solid #ffffff;
-              box-shadow:0 1px 4px rgba(0,0,0,0.25);
-              cursor:pointer;
-              transition:transform 0.15s ease;
-            "></div>
-          `;
-          el.addEventListener('mouseenter', () => {
-            if (el.firstElementChild) el.firstElementChild.style.transform = 'scale(1.4)';
-          });
-          el.addEventListener('mouseleave', () => {
-            if (el.firstElementChild) el.firstElementChild.style.transform = 'scale(1)';
-          });
-        }
-
-        const color = riskColors[n.risk_state] || (n.type === 'warehouse' ? '#20605C' : '#34c759');
-        const stateText = (n.risk_state || (n.type === 'warehouse' ? 'supply' : 'healthy')).toUpperCase();
-        const popupContent = `
-          <div style="font-family:system-ui,-apple-system,sans-serif; padding:4px 2px; min-width:140px;">
-            <div style="font-weight:700; font-size:13px; color:#1d1d1f; margin-bottom:2px;">${escapeHtml(n.name)}</div>
-            <div style="font-size:11px; color:#86868b; margin-bottom:6px;">${n.type === 'warehouse' ? 'Central Warehouse' : 'Kirana Outlet'} &middot; <code>${escapeHtml(n.id)}</code></div>
-            <div style="font-size:11px; font-weight:600; color:${color};">Status: ${stateText}</div>
-          </div>
-        `;
-        const popup = new maplibregl.Popup({ offset: 12, closeButton: true })
-          .setHTML(popupContent);
-
-        new maplibregl.Marker({ element: el })
-          .setLngLat([pos.lng, pos.lat])
-          .setPopup(popup)
-          .addTo(map);
-      });
+      renderMapDataLayers(map, nodes, allEdges);
+      setTimeout(() => map.resize(), 150);
     });
+
   } catch (err) {
     console.error('Error starting MapLibre:', err);
-    triggerFallback();
+    if (realContainer) realContainer.style.display = 'none';
+    if (schematicContainer) schematicContainer.style.display = 'block';
+    renderSchematicFallback(data, allEdges);
+  }
+}
+
+function switchMapStyle(styleKey) {
+  if (!MAP_STYLES[styleKey]) return;
+  const def = MAP_STYLES[styleKey];
+  const maptilerKey = getEffectiveMapTilerKey();
+
+  if (def.requiresKey && !maptilerKey) {
+    openMapTilerModal();
+    const msgEl = document.getElementById('maptiler-key-msg');
+    if (msgEl) {
+      msgEl.textContent = 'Please enter a valid MapTiler key to enable this style.';
+      msgEl.style.color = '#ff9500';
+    }
+    return;
+  }
+
+  currentStyleKey = styleKey;
+  try {
+    localStorage.setItem('ds_map_style', styleKey);
+  } catch(e){}
+
+  let stylePayload;
+  if (def.requiresKey) {
+    stylePayload = def.getUrl(maptilerKey);
+    updateMapStatusPill('success', 'MapTiler Cloud');
+  } else if (def.url) {
+    stylePayload = def.url;
+    updateMapStatusPill('success', def.name);
+  } else if (def.style) {
+    stylePayload = def.style;
+    updateMapStatusPill('success', def.name);
+  }
+
+  if (realMap && stylePayload) {
+    realMap.setStyle(stylePayload);
+  }
+}
+
+// Modal and Controls Event Wiring
+function openMapTilerModal() {
+  const modal = document.getElementById('maptiler-modal');
+  const input = document.getElementById('input-maptiler-key');
+  const msgEl = document.getElementById('maptiler-key-msg');
+  if (!modal || !input) return;
+
+  const currentKey = localStorage.getItem('ds_maptiler_key') || getEffectiveMapTilerKey();
+  input.value = currentKey;
+  if (msgEl) {
+    if (currentKey) {
+      msgEl.textContent = 'Active key loaded from configuration.';
+      msgEl.style.color = '#2e7d32';
+    } else {
+      msgEl.textContent = 'No key set. Currently using CARTO Voyager vector basemap.';
+      msgEl.style.color = '#86868b';
+    }
+  }
+  modal.style.display = 'flex';
+}
+
+function closeMapTilerModal() {
+  const modal = document.getElementById('maptiler-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function initMapControls() {
+  // Mode switcher (Interactive Map vs Schematic Graph)
+  const btnReal = document.getElementById('btn-mode-realmap');
+  const btnSchematic = document.getElementById('btn-mode-schematic');
+  const realContainer = document.getElementById('map-real-container');
+  const schematicContainer = document.getElementById('map-schematic-container');
+  const styleSelectWrap = document.getElementById('map-style-select-wrap');
+  const styleSelect = document.getElementById('map-style-select');
+
+  if (btnReal && btnSchematic) {
+    btnReal.addEventListener('click', () => {
+      activeMapMode = 'real';
+      btnReal.style.background = '#20605C';
+      btnReal.style.color = '#fff';
+      btnReal.style.fontWeight = '600';
+      btnSchematic.style.background = '#fff';
+      btnSchematic.style.color = '#1d1d1f';
+      btnSchematic.style.fontWeight = '500';
+
+      if (styleSelectWrap) styleSelectWrap.style.display = 'flex';
+      if (realContainer) realContainer.style.display = 'block';
+      if (schematicContainer) schematicContainer.style.display = 'none';
+
+      if (realMap) {
+        setTimeout(() => realMap.resize(), 50);
+      } else if (currentMapData && currentAllEdges) {
+        initRealMap(currentMapData, currentAllEdges);
+      }
+    });
+
+    btnSchematic.addEventListener('click', () => {
+      activeMapMode = 'schematic';
+      btnSchematic.style.background = '#20605C';
+      btnSchematic.style.color = '#fff';
+      btnSchematic.style.fontWeight = '600';
+      btnReal.style.background = '#fff';
+      btnReal.style.color = '#1d1d1f';
+      btnReal.style.fontWeight = '500';
+
+      if (styleSelectWrap) styleSelectWrap.style.display = 'none';
+      if (realContainer) realContainer.style.display = 'none';
+      if (schematicContainer) schematicContainer.style.display = 'block';
+
+      if (currentMapData && currentAllEdges) {
+        renderSchematicFallback(currentMapData, currentAllEdges);
+      }
+    });
+  }
+
+  // Style select dropdown
+  if (styleSelect) {
+    styleSelect.addEventListener('change', (e) => {
+      switchMapStyle(e.target.value);
+    });
+  }
+
+  // MapTiler key button and modal
+  const btnKey = document.getElementById('btn-maptiler-key');
+  const btnClose = document.getElementById('btn-close-maptiler');
+  const btnCancel = document.getElementById('btn-cancel-maptiler');
+  const btnSave = document.getElementById('btn-save-maptiler-key');
+  const btnClear = document.getElementById('btn-clear-maptiler-key');
+  const inputKey = document.getElementById('input-maptiler-key');
+
+  if (btnKey) btnKey.addEventListener('click', openMapTilerModal);
+  if (btnClose) btnClose.addEventListener('click', closeMapTilerModal);
+  if (btnCancel) btnCancel.addEventListener('click', closeMapTilerModal);
+
+  if (btnSave && inputKey) {
+    btnSave.addEventListener('click', () => {
+      const val = inputKey.value.trim();
+      if (val) {
+        try {
+          localStorage.setItem('ds_maptiler_key', val);
+        } catch(e){}
+        closeMapTilerModal();
+        if (styleSelect) styleSelect.value = 'maptiler-streets';
+        switchMapStyle('maptiler-streets');
+      } else {
+        try {
+          localStorage.removeItem('ds_maptiler_key');
+        } catch(e){}
+        closeMapTilerModal();
+        if (styleSelect) styleSelect.value = 'carto-voyager';
+        switchMapStyle('carto-voyager');
+      }
+    });
+  }
+
+  if (btnClear && inputKey) {
+    btnClear.addEventListener('click', () => {
+      try {
+        localStorage.removeItem('ds_maptiler_key');
+      } catch(e){}
+      inputKey.value = '';
+      closeMapTilerModal();
+      if (styleSelect) styleSelect.value = 'carto-voyager';
+      switchMapStyle('carto-voyager');
+    });
   }
 }
 
@@ -2530,6 +2922,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initOrientationStrip();
   initCardSpotlight();
   initChartBand();
+  initMapControls();
   const path = window.location.pathname.toLowerCase();
   const hash = window.location.hash.toLowerCase();
   if (path.includes('map') || hash.includes('map')) {

@@ -180,6 +180,9 @@ def get_dashboard():
     if not DASHBOARD_FILE.exists():
         raise HTTPException(status_code=404, detail="dashboard.html not found")
     content = DASHBOARD_FILE.read_text(encoding="utf-8")
+    env_maptiler = os.getenv("MAPTILER_KEY", "").strip()
+    if env_maptiler:
+        content = content.replace("/* __MAPTILER_KEY_INJECTION__ */", f"window.ENV_MAPTILER_KEY = '{env_maptiler}';")
     return HTMLResponse(
         content=content,
         media_type="text/html",
