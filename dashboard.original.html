@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DistriSense — Decision Engine Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-paper: #E9E8E1;
+      --color-paper-light: #FAF9F5;
+      --color-ink: #262624;
+      --color-sage: #C2D6D0;
+      --color-teal: #20605C;
+      --color-teal-card: #2A6B66;
+      --color-ribbon: #8AAFA7;
+      --color-olive: #8A8A68;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--color-paper);
+      color: var(--color-ink);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .top-nav {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      border-bottom: 1px solid rgba(38,38,36,0.1);
+      background: var(--color-paper-light);
+    }
+    .wordmark {
+      text-decoration: none;
+      color: var(--color-ink);
+      font-size: 20px;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .wordmark span.distri { font-family: 'Instrument Serif', serif; font-weight: 700; font-size: 26px; }
+    .wordmark span.sense { font-family: 'Inter', sans-serif; font-weight: 300; letter-spacing: 0.15em; font-size: 13px; }
+    .back-btn {
+      text-decoration: none;
+      color: var(--color-ink);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: 1px solid var(--color-ink);
+      transition: background 0.2s;
+    }
+    .back-btn:hover {
+      background: var(--color-ink);
+      color: #fff;
+    }
+    .dash-container {
+      max-width: 1240px;
+      margin: 40px auto;
+      padding: 0 40px;
+      flex: 1;
+      width: 100%;
+    }
+    .header-section {
+      margin-bottom: 32px;
+    }
+    .eyebrow {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-olive);
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-family: 'Instrument Serif', serif;
+      font-weight: 400;
+      font-size: 48px;
+      line-height: 1.1;
+      margin-bottom: 12px;
+    }
+    p.sub {
+      color: rgba(38,38,36,0.75);
+      font-size: 16px;
+    }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--color-paper-light);
+      padding: 24px;
+      border-radius: 8px;
+    }
+    .stat-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(38,38,36,0.6);
+      margin-bottom: 8px;
+    }
+    .stat-val {
+      font-family: 'Instrument Serif', serif;
+      font-size: 40px;
+      color: var(--color-ink);
+    }
+    .table-card {
+      background: var(--color-paper-light);
+      border-radius: 8px;
+      overflow: hidden;
+      padding: 24px;
+    }
+    .table-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    th {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(38,38,36,0.1);
+      color: rgba(38,38,36,0.6);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 11px;
+    }
+    td {
+      padding: 16px;
+      border-bottom: 1px solid rgba(38,38,36,0.06);
+    }
+    .risk-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: #E8D3D0;
+      color: #923C34;
+    }
+    .risk-badge.optimal {
+      background: #D4E5DE;
+      color: #20605C;
+    }
+  </style>
+</head>
+<body>
+  <nav class="top-nav">
+    <a href="index.html" class="wordmark">
+      <span class="distri">distri</span>
+      <span class="sense">SENSE</span>
+    </a>
+    <a href="index.html" class="back-btn">← Back to Overview</a>
+  </nav>
+
+  <main class="dash-container">
+    <div class="header-section">
+      <div class="eyebrow">Kolhapur Territory · Morning Dispatch</div>
+      <h1>Daily Decision & Transfer Queue</h1>
+      <p class="sub">13 priority approvals generated for today. 6,000 outlet-SKU positions evaluated at 05:00 IST.</p>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Active Outlets Scored</div>
+        <div class="stat-val">6,000</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Stockout Risk Interventions</div>
+        <div class="stat-val">13</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Rupees at Risk Averted</div>
+        <div class="stat-val">₹2,48,500</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Simulation Efficiency</div>
+        <div class="stat-val">−67%</div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-title">
+        <span>Recommended Transfers (Optimal Cheaper Source)</span>
+        <span style="font-size: 13px; font-weight: normal; color: var(--color-olive);">Status: Ready for 1-click execution</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Destination Shelf</th>
+            <th>SKU</th>
+            <th>Cover Left</th>
+            <th>Recommended Source</th>
+            <th>Quantity</th>
+            <th>Risk State</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>SHOP-12 (Rajarampuri)</strong></td>
+            <td>Parle-G 250g Gold</td>
+            <td>1.0 day</td>
+            <td>Warehouse B (Shiroli)</td>
+            <td>28 units</td>
+            <td><span class="risk-badge">Stockout Imminent</span></td>
+          </tr>
+          <tr>
+            <td><strong>SHOP-28 (Shahupuri)</strong></td>
+            <td>Amul Butter 500g</td>
+            <td>1.4 days</td>
+            <td>Warehouse A (MIDC)</td>
+            <td>42 units</td>
+            <td><span class="risk-badge">High Risk</span></td>
+          </tr>
+          <tr>
+            <td><strong>SHOP-07 (Laxmipuri)</strong></td>
+            <td>Tata Salt 1kg</td>
+            <td>1.8 days</td>
+            <td>Warehouse B (Shiroli)</td>
+            <td>60 units</td>
+            <td><span class="risk-badge">Reorder Imminent</span></td>
+          </tr>
+          <tr>
+            <td><strong>SHOP-44 (Tarabai Park)</strong></td>
+            <td>Cadbury Dairy Milk 130g</td>
+            <td>9.0 days (expiry window)</td>
+            <td>Warehouse C (Gandhinagar)</td>
+            <td>35 units</td>
+            <td><span class="risk-badge optimal">Expiry Safeguarded</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>
