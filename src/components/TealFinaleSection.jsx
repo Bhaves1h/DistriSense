@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
-import { DASHBOARD_URL } from '../config';
+import { DASHBOARD_URL, getSmartDashboardUrl } from '../config';
 
 export default function TealFinaleSection({ onOpenDashboard }) {
   return (
@@ -41,7 +41,7 @@ export default function TealFinaleSection({ onOpenDashboard }) {
         <p>See the queue your distributor will face tomorrow morning — and clear it today.</p>
         
         <a 
-          href="#/login"
+          href={getSmartDashboardUrl()}
           className="pill pill-solid"
         >
           <span className="pill-window">

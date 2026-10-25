@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, LayoutDashboard, Menu, X } from 'lucide-react';
-import { DASHBOARD_URL } from '../config';
+import { DASHBOARD_URL, getDashboardUrl } from '../config';
 
-export default function Header({ currentView, onNavigate }) {
+export default function Header({ currentView, currentCompany, onNavigate, onSwitchCompany }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -53,19 +53,80 @@ export default function Header({ currentView, onNavigate }) {
 
       {/* Right Liquid-Glass CTA Anchor */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <a 
-          href="#/login"
-          className="cinematic-nav-link"
-          style={{ fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' }}
-        >
-          Sign In
-        </a>
-        <a 
-          href="#/login"
-          className="liquid-glass cinematic-nav-cta"
-        >
-          Open the dashboard
-        </a>
+        {currentCompany ? (
+          <>
+            <div 
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                padding: '4px 10px',
+                borderRadius: '9999px',
+                fontSize: '12px',
+                color: '#E9E8E1',
+              }}
+            >
+              <span 
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: '#34c759',
+                  boxShadow: '0 0 6px rgba(52, 199, 89, 0.6)'
+                }} 
+              />
+              <span style={{ fontWeight: 500, maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {currentCompany}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const confirmed = window.confirm(`Log out of "${currentCompany}" and sign in as another company?`);
+                  if (confirmed && onSwitchCompany) {
+                    onSwitchCompany();
+                  }
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#8AAFA7',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  padding: '0 2px'
+                }}
+                title="Log out or sign in as another company"
+              >
+                Switch
+              </button>
+            </div>
+
+            <a 
+              href={getDashboardUrl(currentCompany)}
+              className="liquid-glass cinematic-nav-cta"
+            >
+              Dashboard &rarr;
+            </a>
+          </>
+        ) : (
+          <>
+            <a 
+              href="#/login"
+              className="cinematic-nav-link"
+              style={{ fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' }}
+            >
+              Sign In
+            </a>
+            <a 
+              href="#/login"
+              className="liquid-glass cinematic-nav-cta"
+            >
+              Open the dashboard
+            </a>
+          </>
+        )}
 
         {/* Mobile menu trigger */}
         <button 
@@ -107,20 +168,52 @@ export default function Header({ currentView, onNavigate }) {
           <button onClick={() => scrollToSection('map')} className="cinematic-nav-link" style={{ textAlign: 'left' }}>TERRITORY MAP</button>
           <button onClick={() => scrollToSection('proof')} className="cinematic-nav-link" style={{ textAlign: 'left' }}>PROOF & FINDINGS</button>
           <button onClick={() => scrollToSection('proof')} className="cinematic-nav-link" style={{ textAlign: 'left' }}>SIMULATION</button>
-          <a 
-            href="#/login"
-            className="cinematic-nav-link"
-            style={{ textAlign: 'left', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.08em' }}
-          >
-            Sign In / Register
-          </a>
-          <a 
-            href="#/login"
-            className="pill pill-solid"
-            style={{ width: '100%', marginTop: '4px', justifyContent: 'center' }}
-          >
-            Open the dashboard
-          </a>
+          
+          {currentCompany ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px', color: '#E9E8E1' }}>
+                <span>Signed in: <strong>{currentCompany}</strong></span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    const confirmed = window.confirm(`Log out of "${currentCompany}" and sign in as another company?`);
+                    if (confirmed && onSwitchCompany) onSwitchCompany();
+                  }}
+                  style={{ background: 'none', border: 'none', color: '#8AAFA7', fontSize: '12px', textDecoration: 'underline', cursor: 'pointer' }}
+                >
+                  Switch
+                </button>
+              </div>
+              <a 
+                href={getDashboardUrl(currentCompany)}
+                className="pill pill-solid"
+                style={{ width: '100%', justifyContent: 'center' }}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Open Dashboard &rarr;
+              </a>
+            </div>
+          ) : (
+            <>
+              <a 
+                href="#/login"
+                className="cinematic-nav-link"
+                style={{ textAlign: 'left', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.08em' }}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Sign In / Register
+              </a>
+              <a 
+                href="#/login"
+                className="pill pill-solid"
+                style={{ width: '100%', marginTop: '4px', justifyContent: 'center' }}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Open the dashboard
+              </a>
+            </>
+          )}
         </div>
       )}
     </header>

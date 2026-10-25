@@ -24,11 +24,35 @@ export const API_BASE_URL = resolveApiBaseUrl();
 
 export function getDashboardUrl(companyName) {
   if (typeof window === "undefined") return DASHBOARD_URL;
-  const company = companyName || localStorage.getItem("ds_company");
+  let company = companyName;
+  if (!company) {
+    try {
+      company = localStorage.getItem("ds_company");
+    } catch (_) {}
+  }
   if (company && company.trim()) {
     const separator = DASHBOARD_URL.includes("?") ? "&" : "?";
     return `${DASHBOARD_URL}${separator}company=${encodeURIComponent(company.trim())}`;
   }
   return DASHBOARD_URL;
 }
+
+export function getCurrentCompany() {
+  if (typeof window === "undefined") return null;
+  try {
+    const comp = localStorage.getItem("ds_company");
+    return comp && comp.trim() ? comp.trim() : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+export function getSmartDashboardUrl(companyName) {
+  const comp = companyName || getCurrentCompany();
+  if (comp) {
+    return getDashboardUrl(comp);
+  }
+  return '#/login';
+}
+
 

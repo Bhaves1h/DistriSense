@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NETWORK_NODES } from '../data/mockData';
 import { Navigation, Truck } from 'lucide-react';
-import { DASHBOARD_URL } from '../config';
+import { DASHBOARD_URL, getSmartDashboardUrl } from '../config';
 
 export default function InterludeMapSection({ onOpenDashboardWithTab }) {
   const [selectedNode, setSelectedNode] = useState(NETWORK_NODES.find(n => n.id === 'shop-12'));
@@ -49,7 +49,7 @@ export default function InterludeMapSection({ onOpenDashboardWithTab }) {
                   Current Cover: <strong>{selectedNode.cover || selectedNode.stock}</strong>
                 </div>
                 <a
-                  href="#/login"
+                  href={getSmartDashboardUrl()}
                   className="action-btn-sm action-btn-approve"
                   style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}
                 >

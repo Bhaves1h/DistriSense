@@ -31,13 +31,14 @@ const QUIZ_QUESTIONS = [
   }
 ];
 
-export default function LoginPage() {
+export default function LoginPage({ onLoginSuccess }) {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
   const googleBtnRef = useRef(null);
   const emailInputRef = useRef(null);
 
   // View state: 'register' -> 'google-org' (if Google auth) -> 'quiz' -> 'complete'
   const [view, setView] = useState('register');
+  const [authMode, setAuthMode] = useState('signin'); // 'signin' or 'register'
   const [quizIndex, setQuizIndex] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState({
     shops: '51–100',
@@ -49,7 +50,7 @@ export default function LoginPage() {
   const [selectedOption, setSelectedOption] = useState(null);
 
   // Standard Form state
-  const [organisationName, setOrganisationName] = useState('');
+  const [organisationName, setOrganisationName] = useState('Apex FMCG Distributors');
   const [contactPerson, setContactPerson] = useState('');
   const [workEmail, setWorkEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -73,11 +74,7 @@ export default function LoginPage() {
     }
   });
 
-  // FIX C: Starting a fresh registration (arriving at #/login) clears ds_onboarding from any previous session
   useEffect(() => {
-    try {
-      localStorage.removeItem('ds_onboarding');
-    } catch (_) {}
     setQuizIndex(0);
     setSelectedOption(null);
   }, []);
@@ -168,6 +165,12 @@ export default function LoginPage() {
     try {
       localStorage.setItem('ds_company', trimmed);
     } catch (_) {}
+    if (onLoginSuccess) {
+      try { onLoginSuccess(trimmed); } catch (_) {}
+    }
+    try {
+      window.dispatchEvent(new Event('distrisense_auth_changed'));
+    } catch (_) {}
 
     let baseUrl = DASHBOARD_URL;
     const hashIndex = baseUrl.indexOf('#');
@@ -179,6 +182,28 @@ export default function LoginPage() {
     const separator = baseUrl.includes('?') ? '&' : '?';
     const target = `${baseUrl}${separator}company=${encodeURIComponent(trimmed)}${hashPart}`;
     window.location.replace(target);
+  };
+
+  // Sign In submit -> Directly opens dashboard without requiring quiz
+  const handleSignInSubmit = (e) => {
+    e.preventDefault();
+    const org = organisationName.trim() || 'Apex FMCG Distributors';
+    if (!org) {
+      setOrgError('Please enter your organisation name to sign in.');
+      return;
+    }
+    setOrgError('');
+    setCompany(org);
+    try {
+      localStorage.setItem('ds_company', org);
+    } catch (_) {}
+    if (onLoginSuccess) {
+      try { onLoginSuccess(org); } catch (_) {}
+    }
+    try {
+      window.dispatchEvent(new Event('distrisense_auth_changed'));
+    } catch (_) {}
+    redirectToDashboard(org);
   };
 
   // Form submit -> Sets company, clears onboarding, advances to clean Quiz
@@ -360,7 +385,7 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col items-center justify-center py-20 px-4 sm:px-12 lg:px-16 xl:px-20 overflow-y-auto">
         <div className="w-full max-w-lg">
           <AnimatePresence mode="wait">
-            {/* VIEW 1: REGISTRATION FORM */}
+            {/* VIEW 1: AUTHENTICATION / REGISTRATION */}
             {view === 'register' && (
               <motion.div
                 key="register-form"
@@ -382,34 +407,45 @@ export default function LoginPage() {
                     <ArrowLeft size={14} />
                     <span>Back to Website</span>
                   </button>
-
-                  {existingCompany && (
-                    <button
-                      type="button"
-                      onClick={() => redirectToDashboard(existingCompany)}
-                      className="text-xs text-[#8AAFA7] hover:text-white transition-colors cursor-pointer underline"
-                    >
-                      Resume {existingCompany} &rarr;
-                    </button>
-                  )}
                 </div>
 
-                {/* Active Session Card (if previously logged in) */}
-                {existingCompany && (
-                  <div className="rounded-xl border border-white/15 bg-white/5 p-4 text-left" style={{ marginBottom: '28px' }}>
-                    <div className="flex items-center justify-between gap-3 flex-wrap">
-                      <div>
-                        <p className="text-xs text-white/50">Signed in company</p>
-                        <p className="text-sm font-semibold text-white">{existingCompany}</p>
+                {/* CASE A: Active Session Screen (User is already signed in!) */}
+                {existingCompany ? (
+                  <div>
+                    <div className="text-left" style={{ marginBottom: '20px' }}>
+                      <span className="inline-block text-xs uppercase tracking-widest text-[#8AAFA7] font-semibold mb-2">
+                        Active Session
+                      </span>
+                      <h2 className="text-3xl font-medium tracking-tight text-white">
+                        Welcome back
+                      </h2>
+                      <p className="text-white/60 text-sm mt-2">
+                        You are already signed into DistriSense.
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/15 bg-white/5 p-6 text-left mb-6">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-12 h-12 rounded-xl bg-[#20605C] flex items-center justify-center text-white font-bold text-xl shadow-inner">
+                          {existingCompany.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-base font-semibold text-white">{existingCompany}</p>
+                          <p className="text-xs text-white/50">Kolhapur Territory · Connected</p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => redirectToDashboard(existingCompany)}
-                          className="px-3.5 py-1.5 bg-[#20605C] hover:bg-[#173F3B] text-white text-xs font-semibold rounded-lg transition-all cursor-pointer shadow-sm"
-                        >
-                          Open Dashboard &rarr;
-                        </button>
+
+                      <button
+                        type="button"
+                        onClick={() => redirectToDashboard(existingCompany)}
+                        className="w-full h-12 bg-white text-black font-semibold rounded-xl hover:bg-white/90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg"
+                      >
+                        <span>Open Dashboard</span>
+                        <span>&rarr;</span>
+                      </button>
+
+                      <div className="flex items-center justify-between mt-5 pt-4 border-t border-white/10 text-xs">
+                        <span className="text-white/40">Not {existingCompany}?</span>
                         <button
                           type="button"
                           onClick={() => {
@@ -420,144 +456,212 @@ export default function LoginPage() {
                             setExistingCompany('');
                             setCompany('');
                             setOrganisationName('');
+                            setAuthMode('signin');
+                            try {
+                              window.dispatchEvent(new Event('distrisense_auth_changed'));
+                            } catch (_) {}
                           }}
-                          className="px-2.5 py-1.5 text-xs text-white/50 hover:text-white underline transition-colors cursor-pointer"
-                          title="Sign in as another company"
+                          className="text-[#8AAFA7] hover:text-white underline cursor-pointer font-medium"
                         >
-                          Switch
+                          Sign In as Another Company
                         </button>
                       </div>
                     </div>
                   </div>
-                )}
-
-                {/* Header */}
-                <div className="text-left">
-                  <h2 className="text-3xl font-medium tracking-tight text-white">
-                    Register Your Organisation
-                  </h2>
-                  <p className="text-white/45 text-sm" style={{ marginTop: '10px' }}>
-                    Input your organisation details to begin the journey.
-                  </p>
-                </div>
-
-                {/* Social Row: Official Google Button (gracefully hidden if client ID empty) */}
-                {googleClientId ? (
-                  <div style={{ marginTop: '28px' }}>
-                    <div className="w-full flex justify-center min-h-[44px]">
-                      <div ref={googleBtnRef} className="w-full flex justify-center" />
-                    </div>
-
-                    {isGoogleLoading && (
-                      <div className="flex items-center justify-center gap-2 text-xs text-white/60" style={{ margin: '10px 0' }}>
-                        <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                        <span>Verifying Google account...</span>
-                      </div>
-                    )}
-
-                    {googleAuthError && (
-                      <p className="text-xs text-red-400 text-center" style={{ margin: '10px 0' }}>
-                        {googleAuthError}
-                      </p>
-                    )}
-
-                    {/* OR Divider */}
-                    <div className="relative flex items-center justify-center" style={{ margin: '26px 0' }}>
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-white/10" />
-                      </div>
-                      <span className="relative bg-black px-4 text-xs font-medium text-white/40 uppercase tracking-widest">
-                        OR
-                      </span>
-                    </div>
-                  </div>
-                ) : null}
-
-                {/* Form Fields: Organisation-first, roomy h-12 inputs, gap 28px */}
-                <form onSubmit={handleRegisterSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-                  {/* 1. Organisation Name */}
-                  <InputGroup
-                    label="Organisation Name"
-                    placeholder="e.g. Shree Ganesh Distributors"
-                    type="text"
-                    value={organisationName}
-                    onChange={(e) => {
-                      setOrganisationName(e.target.value);
-                      if (orgError) setOrgError('');
-                    }}
-                    required
-                    error={orgError}
-                  />
-
-                  {/* 2. Contact Person */}
-                  <InputGroup
-                    label="Contact Person"
-                    placeholder="e.g. Rohit Sharma"
-                    type="text"
-                    value={contactPerson}
-                    onChange={(e) => setContactPerson(e.target.value)}
-                    required
-                  />
-
-                  {/* 3. Work Email */}
-                  <InputGroup
-                    ref={emailInputRef}
-                    label="Work Email"
-                    placeholder="you@company.in"
-                    type="email"
-                    value={workEmail}
-                    onChange={(e) => setWorkEmail(e.target.value)}
-                    required
-                  />
-
-                  {/* 4. Password with Eye toggle */}
-                  <InputGroup
-                    label="Password"
-                    placeholder="Requires at least 8 symbols"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    helperText="Requires at least 8 symbols."
-                    rightElement={
+                ) : (
+                  /* CASE B: Sign In vs Register Form (For guests or switching companies) */
+                  <div>
+                    {/* Mode Tabs */}
+                    <div className="flex rounded-xl bg-white/5 p-1 border border-white/10 mb-6">
                       <button
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="text-white/40 hover:text-white transition-colors cursor-pointer"
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        onClick={() => setAuthMode('signin')}
+                        className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                          authMode === 'signin' ? 'bg-white text-black shadow' : 'text-white/60 hover:text-white'
+                        }`}
                       >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        Sign In
                       </button>
-                    }
-                  />
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode('register')}
+                        className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                          authMode === 'register' ? 'bg-white text-black shadow' : 'text-white/60 hover:text-white'
+                        }`}
+                      >
+                        Register Organisation
+                      </button>
+                    </div>
 
-                  {/* Full-width white submit button */}
-                  <button
-                    type="submit"
-                    className="w-full h-12 bg-white text-black font-semibold rounded-xl hover:bg-white/90 active:scale-[0.98] transition-all cursor-pointer"
-                    style={{ marginTop: '32px' }}
-                  >
-                    Create Account
-                  </button>
-                </form>
+                    {/* Header */}
+                    <div className="text-left">
+                      <h2 className="text-3xl font-medium tracking-tight text-white">
+                        {authMode === 'signin' ? 'Sign In to DistriSense' : 'Register Your Organisation'}
+                      </h2>
+                      <p className="text-white/45 text-sm" style={{ marginTop: '10px' }}>
+                        {authMode === 'signin' 
+                          ? 'Select or enter your organisation name to open your dashboard.' 
+                          : 'Input your organisation details to begin the journey.'}
+                      </p>
+                    </div>
 
-                {/* Footer link */}
-                <p className="text-center text-sm text-white/40" style={{ marginTop: '24px' }}>
-                  Member of the team?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (window.google?.accounts?.id && googleClientId) {
-                        window.google.accounts.id.prompt();
-                      } else {
-                        emailInputRef.current?.focus();
-                      }
-                    }}
-                    className="text-white hover:underline cursor-pointer font-medium"
-                  >
-                    Log in
-                  </button>
-                </p>
+                    {/* Quick Select for returning/demo companies in Sign In mode */}
+                    {authMode === 'signin' && (
+                      <div style={{ marginTop: '20px', marginBottom: '8px' }}>
+                        <p className="text-xs text-white/40 mb-2">Demo Organisations:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {['Apex FMCG Distributors', 'Kagal Agro Logistics', 'Shree Ganesh Traders'].map((org) => (
+                            <button
+                              key={org}
+                              type="button"
+                              onClick={() => {
+                                setOrganisationName(org);
+                                if (orgError) setOrgError('');
+                              }}
+                              className={`text-xs px-2.5 py-1 rounded-md border transition-all cursor-pointer ${
+                                organisationName === org
+                                  ? 'border-[#8AAFA7] bg-[#20605C]/30 text-white font-medium'
+                                  : 'border-white/10 bg-white/5 text-white/60 hover:text-white hover:border-white/20'
+                              }`}
+                            >
+                              {org}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Social Row: Official Google Button */}
+                    {googleClientId ? (
+                      <div style={{ marginTop: '24px' }}>
+                        <div className="w-full flex justify-center min-h-[44px]">
+                          <div ref={googleBtnRef} className="w-full flex justify-center" />
+                        </div>
+
+                        {isGoogleLoading && (
+                          <div className="flex items-center justify-center gap-2 text-xs text-white/60" style={{ margin: '10px 0' }}>
+                            <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                            <span>Verifying Google account...</span>
+                          </div>
+                        )}
+
+                        {googleAuthError && (
+                          <p className="text-xs text-red-400 text-center" style={{ margin: '10px 0' }}>
+                            {googleAuthError}
+                          </p>
+                        )}
+
+                        <div className="relative flex items-center justify-center" style={{ margin: '24px 0' }}>
+                          <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-white/10" />
+                          </div>
+                          <span className="relative bg-black px-4 text-xs font-medium text-white/40 uppercase tracking-widest">
+                            OR
+                          </span>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {/* Auth Form */}
+                    <form 
+                      onSubmit={authMode === 'signin' ? handleSignInSubmit : handleRegisterSubmit} 
+                      style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginTop: googleClientId ? '0' : '20px' }}
+                    >
+                      {/* Organisation Name */}
+                      <InputGroup
+                        label="Organisation Name"
+                        placeholder="e.g. Apex FMCG Distributors"
+                        type="text"
+                        value={organisationName}
+                        onChange={(e) => {
+                          setOrganisationName(e.target.value);
+                          if (orgError) setOrgError('');
+                        }}
+                        required
+                        error={orgError}
+                      />
+
+                      {/* Contact Person (only in register mode) */}
+                      {authMode === 'register' && (
+                        <InputGroup
+                          label="Contact Person"
+                          placeholder="e.g. Rohit Sharma"
+                          type="text"
+                          value={contactPerson}
+                          onChange={(e) => setContactPerson(e.target.value)}
+                          required
+                        />
+                      )}
+
+                      {/* Work Email */}
+                      <InputGroup
+                        ref={emailInputRef}
+                        label="Work Email"
+                        placeholder="you@company.in"
+                        type="email"
+                        value={workEmail}
+                        onChange={(e) => setWorkEmail(e.target.value)}
+                        required={authMode === 'register'}
+                      />
+
+                      {/* Password */}
+                      <InputGroup
+                        label="Password"
+                        placeholder={authMode === 'signin' ? 'Enter your password' : 'Requires at least 8 symbols'}
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required={authMode === 'register'}
+                        rightElement={
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="text-white/40 hover:text-white transition-colors cursor-pointer"
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                          >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        }
+                      />
+
+                      {/* Submit Button */}
+                      <button
+                        type="submit"
+                        className="w-full h-12 bg-white text-black font-semibold rounded-xl hover:bg-white/90 active:scale-[0.98] transition-all cursor-pointer shadow-md"
+                        style={{ marginTop: '16px' }}
+                      >
+                        {authMode === 'signin' ? 'Sign In & Open Dashboard →' : 'Create Account & Continue →'}
+                      </button>
+                    </form>
+
+                    {/* Footer Mode Switcher */}
+                    <p className="text-center text-sm text-white/40" style={{ marginTop: '24px' }}>
+                      {authMode === 'signin' ? (
+                        <>
+                          New organisation?{' '}
+                          <button
+                            type="button"
+                            onClick={() => setAuthMode('register')}
+                            className="text-white hover:underline cursor-pointer font-medium"
+                          >
+                            Register here
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          Already have an organisation?{' '}
+                          <button
+                            type="button"
+                            onClick={() => setAuthMode('signin')}
+                            className="text-white hover:underline cursor-pointer font-medium"
+                          >
+                            Sign in here
+                          </button>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                )}
               </motion.div>
             )}
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { DASHBOARD_URL } from '../config';
+import { DASHBOARD_URL, getSmartDashboardUrl } from '../config';
 
 export default function HeroSection({ onOpenDashboard }) {
   const [mounted, setMounted] = useState(false);
@@ -70,7 +70,7 @@ export default function HeroSection({ onOpenDashboard }) {
           it sees the stockout before the shelf does
         </p>
 
-        <a href="#/login" className="cinematic-cta-btn">
+        <a href={getSmartDashboardUrl()} className="cinematic-cta-btn">
           <span>Open the dashboard</span>
         </a>
       </div>

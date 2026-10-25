@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 import TracingBeam from './TracingBeam';
-import { DASHBOARD_URL } from '../config';
+import { DASHBOARD_URL, getSmartDashboardUrl } from '../config';
 
 const DECK_CARDS = [
   {
@@ -170,7 +170,7 @@ export default function FindingsDeckSection({ onOpenDashboardWithTab }) {
             </p>
 
             <a
-              href="#/login"
+              href={getSmartDashboardUrl()}
               className="pill pill-solid"
             >
               <span className="pill-window">

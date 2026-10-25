@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
-import { DASHBOARD_URL } from '../config';
+import { DASHBOARD_URL, getSmartDashboardUrl } from '../config';
 
 const ECO_CARDS = [
   {
@@ -104,7 +104,7 @@ function EcosystemCardItem({ card, onOpenDashboardWithTab, registerCardRef }) {
           </div>
 
           <a
-            href="#/login"
+            href={getSmartDashboardUrl()}
             onClick={(e) => e.stopPropagation()}
             className="pill pill-outline-light"
             style={{ marginTop: '20px', width: '100%', justifyContent: 'center' }}

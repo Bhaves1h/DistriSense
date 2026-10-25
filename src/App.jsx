@@ -12,17 +12,30 @@ import DashboardView from './components/DashboardView';
 import LoginPage from './components/LoginPage';
 import { CheckCircle2 } from 'lucide-react';
 
+import { getCurrentCompany, getDashboardUrl } from './config';
+
 export default function App() {
   const [currentView, setCurrentView] = useState('landing');
   const [dashboardTab, setDashboardTab] = useState('queue');
   const [preloaderVisible, setPreloaderVisible] = useState(true);
   const [toasts, setToasts] = useState([]);
+  const [currentCompany, setCurrentCompany] = useState(() => getCurrentCompany());
 
-  // Check URL on load, popstate, and hashchange
+  // Check URL on load, popstate, hashchange, and storage change
   useEffect(() => {
     const handleUrlChange = () => {
       const hash = window.location.hash;
+      const savedCompany = getCurrentCompany();
+      setCurrentCompany(savedCompany);
+
       if (hash === '#/login' || hash === '#login') {
+        // If user is already authenticated (e.g. pressed browser Back from dashboard):
+        // NEVER re-prompt for registration/sign-in. Cleanly resume landing page with auth state!
+        if (savedCompany && savedCompany.trim()) {
+          window.history.replaceState(null, '', '#overview');
+          setCurrentView('landing');
+          return;
+        }
         try {
           localStorage.removeItem('ds_onboarding');
         } catch (_) {}
@@ -41,9 +54,13 @@ export default function App() {
     handleUrlChange();
     window.addEventListener('popstate', handleUrlChange);
     window.addEventListener('hashchange', handleUrlChange);
+    window.addEventListener('storage', handleUrlChange);
+    window.addEventListener('distrisense_auth_changed', handleUrlChange);
     return () => {
       window.removeEventListener('popstate', handleUrlChange);
       window.removeEventListener('hashchange', handleUrlChange);
+      window.removeEventListener('storage', handleUrlChange);
+      window.removeEventListener('distrisense_auth_changed', handleUrlChange);
     };
   }, []);
 
@@ -121,7 +138,12 @@ export default function App() {
 
       {/* Active View Rendering */}
       {currentView === 'login' ? (
-        <LoginPage />
+        <LoginPage onLoginSuccess={(comp) => {
+          setCurrentCompany(comp);
+          try {
+            window.dispatchEvent(new Event('distrisense_auth_changed'));
+          } catch (_) {}
+        }} />
       ) : currentView === 'dashboard' ? (
         <DashboardView 
           initialTab={dashboardTab}
@@ -132,7 +154,17 @@ export default function App() {
         <div className="overview-page">
           <Header 
             currentView={currentView}
+            currentCompany={currentCompany}
             onNavigate={(view) => navigateTo(view)}
+            onSwitchCompany={() => {
+              try {
+                localStorage.removeItem('ds_company');
+                localStorage.removeItem('ds_onboarding');
+              } catch (_) {}
+              setCurrentCompany(null);
+              window.location.hash = '#/login';
+              setCurrentView('login');
+            }}
           />
 
           <main>
