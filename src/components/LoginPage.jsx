@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Eye, EyeOff, Check, ArrowLeft } from 'lucide-react';
 import { DASHBOARD_URL, API_BASE_URL } from '../config';
 
 const QUIZ_QUESTIONS = [
